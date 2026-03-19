@@ -1,8 +1,8 @@
 {
   "manifest_version": 3,
   "name": "Insta Outreach Automator",
-  "version": "1.0",
-  "description": "Hands-free, chronometrically humanized Instagram story DMs perfectly avoiding detection bots.",
+  "version": "1.0.0",
+  "description": "Schedule and automate personalized Instagram story viewer outreach with smart batching, daily message scheduling, and location filtering.",
   "permissions": [
     "storage",
     "alarms",
@@ -25,6 +25,11 @@
   ],
   "action": {
     "default_popup": "popup.html",
-    "default_title": "Bots Dashboard"
+    "default_title": "Insta Outreach Automator"
+  },
+  "icons": {
+    "16": "icons/icon16.png",
+    "48": "icons/icon48.png",
+    "128": "icons/icon128.png"
   }
 }
