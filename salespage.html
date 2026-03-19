@@ -124,6 +124,35 @@
     .hero-stat .number { font-size: 32px; font-weight: 800; color: var(--gray-900); }
     .hero-stat .label { font-size: 13px; color: var(--gray-500); margin-top: 4px; }
 
+    /* ── DEMO VIDEO ── */
+    .demo-video {
+      padding: 80px 0 100px; background: var(--gray-50);
+      text-align: center;
+    }
+    .demo-video .section-label { text-align: center; }
+    .demo-video h2 {
+      font-size: 36px; font-weight: 800; color: var(--gray-900);
+      margin-bottom: 12px; letter-spacing: -0.5px;
+    }
+    .demo-video .subtitle {
+      font-size: 18px; color: var(--gray-500); max-width: 520px;
+      margin: 0 auto 40px;
+    }
+    .video-wrapper {
+      max-width: 860px; margin: 0 auto;
+      border-radius: 16px; overflow: hidden;
+      box-shadow: var(--shadow-xl);
+      border: 1px solid var(--gray-200);
+      background: var(--gray-900);
+      position: relative;
+      padding-bottom: 56.25%;
+      height: 0;
+    }
+    .video-wrapper iframe {
+      position: absolute; top: 0; left: 0;
+      width: 100%; height: 100%; border: 0;
+    }
+
     /* ── SOCIAL PROOF ── */
     .social-proof {
       padding: 48px 0; background: var(--white); border-top: 1px solid var(--gray-100);
@@ -359,6 +388,7 @@
     <div class="container nav-inner">
       <a href="#" class="nav-logo"><span>Insta-Story</span>-Outreach</a>
       <div class="nav-links">
+        <a href="#demo">Demo</a>
         <a href="#features">Features</a>
         <a href="#how-it-works">How It Works</a>
         <a href="#pricing">Pricing</a>
@@ -391,6 +421,18 @@
           <div class="number">24/7</div>
           <div class="label">Runs in Background</div>
         </div>
+      </div>
+    </div>
+  </section>
+
+  <!-- DEMO VIDEO -->
+  <section class="demo-video" id="demo">
+    <div class="container">
+      <div class="section-label">See It In Action</div>
+      <h2>Watch the Extension in Action</h2>
+      <p class="subtitle">A quick walkthrough showing how the extension automates your entire DM outreach workflow.</p>
+      <div class="video-wrapper fade-up">
+        <iframe src="https://www.tella.tv/video/chrome-extension-dm-to-story-viewers-automatically-1-bzav/embed?b=0&title=0&a=1&loop=0&autoPlay=false&t=0&muted=0&wt=0" allowfullscreen allowtransparency></iframe>
       </div>
     </div>
   </section>
