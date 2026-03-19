@@ -64,8 +64,10 @@
     .nav-links a {
       text-decoration: none; color: var(--gray-600); font-size: 14px;
       font-weight: 500; transition: color 0.2s;
+      -webkit-text-fill-color: initial;
     }
     .nav-links a:hover { color: var(--gray-900); }
+    .nav-links a.btn-primary { color: var(--white) !important; -webkit-text-fill-color: var(--white) !important; }
     .btn {
       display: inline-flex; align-items: center; justify-content: center;
       padding: 10px 24px; border-radius: 8px; font-weight: 600;
@@ -73,8 +75,9 @@
       border: none; cursor: pointer;
     }
     .btn-primary {
-      background: var(--gradient); color: var(--white);
+      background: var(--gradient); color: var(--white) !important;
       box-shadow: 0 4px 14px rgba(108,60,225,0.35);
+      -webkit-text-fill-color: var(--white);
     }
     .btn-primary:hover { transform: translateY(-1px); box-shadow: 0 6px 20px rgba(108,60,225,0.45); }
     .btn-outline {
