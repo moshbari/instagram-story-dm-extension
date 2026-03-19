@@ -1,8 +1,8 @@
 {
   "manifest_version": 3,
-  "name": "Insta Outreach Automator",
+  "name": "Insta-Story-Outreach-Automator",
   "version": "1.0.0",
-  "description": "Schedule and automate personalized Instagram story viewer outreach with smart batching, daily message scheduling, and location filtering.",
+  "description": "Automate Instagram story viewer outreach with smart batching, daily message scheduling, and location filtering.",
   "permissions": [
     "storage",
     "alarms",
