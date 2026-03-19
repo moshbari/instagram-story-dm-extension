@@ -1,0 +1,365 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+  <meta charset="UTF-8">
+  <meta name="viewport" content="width=device-width, initial-scale=1.0">
+  <title>Privacy Policy — Insta-Story-Outreach-Automator</title>
+  <style>
+    *, *::before, *::after { box-sizing: border-box; margin: 0; padding: 0; }
+
+    :root {
+      --gray-50: #f9fafb;
+      --gray-100: #f3f4f6;
+      --gray-200: #e5e7eb;
+      --gray-400: #9ca3af;
+      --gray-500: #6b7280;
+      --gray-600: #4b5563;
+      --gray-700: #374151;
+      --gray-800: #1f2937;
+      --gray-900: #111827;
+      --purple: #6C3CE1;
+      --purple-light: #f3eeff;
+      --gradient: linear-gradient(135deg, #6C3CE1 0%, #E1306C 100%);
+      --white: #ffffff;
+    }
+
+    html { scroll-behavior: smooth; }
+
+    body {
+      font-family: -apple-system, BlinkMacSystemFont, 'Segoe UI', Roboto, 'Helvetica Neue', Arial, sans-serif;
+      color: var(--gray-700);
+      line-height: 1.8;
+      background: var(--white);
+      -webkit-font-smoothing: antialiased;
+    }
+
+    /* ── NAV ── */
+    nav {
+      position: fixed; top: 0; left: 0; right: 0; z-index: 100;
+      background: rgba(255,255,255,0.95); backdrop-filter: blur(12px);
+      border-bottom: 1px solid var(--gray-200);
+    }
+    .nav-inner {
+      max-width: 800px; margin: 0 auto; padding: 0 24px;
+      display: flex; justify-content: space-between; align-items: center;
+      height: 60px;
+    }
+    .nav-logo {
+      font-weight: 800; font-size: 17px; color: var(--gray-900);
+      text-decoration: none;
+    }
+    .nav-logo span { background: var(--gradient); -webkit-background-clip: text; -webkit-text-fill-color: transparent; }
+    .nav-back {
+      font-size: 14px; color: var(--purple); text-decoration: none; font-weight: 600;
+    }
+    .nav-back:hover { text-decoration: underline; }
+
+    /* ── HEADER ── */
+    .page-header {
+      padding: 120px 0 48px; text-align: center;
+      background: linear-gradient(180deg, var(--gray-50) 0%, var(--white) 100%);
+    }
+    .page-header h1 {
+      font-size: 36px; font-weight: 800; color: var(--gray-900);
+      letter-spacing: -0.5px; margin-bottom: 8px;
+    }
+    .page-header .effective {
+      font-size: 14px; color: var(--gray-500);
+    }
+
+    /* ── CONTENT ── */
+    .content {
+      max-width: 720px; margin: 0 auto; padding: 0 24px 80px;
+    }
+    .content h2 {
+      font-size: 22px; font-weight: 700; color: var(--gray-900);
+      margin: 48px 0 16px; padding-top: 16px;
+      border-top: 1px solid var(--gray-200);
+    }
+    .content h2:first-of-type { border-top: none; margin-top: 32px; }
+    .content p {
+      font-size: 15px; color: var(--gray-600); margin-bottom: 16px;
+    }
+    .content ul {
+      margin: 0 0 16px 24px; font-size: 15px; color: var(--gray-600);
+    }
+    .content li { margin-bottom: 8px; }
+    .content strong { color: var(--gray-800); }
+
+    .highlight-box {
+      background: var(--purple-light); border-left: 4px solid var(--purple);
+      border-radius: 0 8px 8px 0; padding: 16px 20px; margin: 24px 0;
+      font-size: 14px; color: var(--gray-700);
+    }
+
+    .data-table {
+      width: 100%; border-collapse: collapse; margin: 16px 0 24px;
+      font-size: 14px;
+    }
+    .data-table th {
+      text-align: left; padding: 10px 12px; background: var(--gray-100);
+      color: var(--gray-800); font-weight: 600; border-bottom: 2px solid var(--gray-200);
+    }
+    .data-table td {
+      padding: 10px 12px; border-bottom: 1px solid var(--gray-200);
+      color: var(--gray-600);
+    }
+    .data-table tr:last-child td { border-bottom: none; }
+
+    .badge-yes {
+      display: inline-block; background: #fee2e2; color: #dc2626;
+      font-size: 11px; font-weight: 700; padding: 2px 8px; border-radius: 100px;
+    }
+    .badge-no {
+      display: inline-block; background: #d1fae5; color: #059669;
+      font-size: 11px; font-weight: 700; padding: 2px 8px; border-radius: 100px;
+    }
+
+    /* ── TOC ── */
+    .toc {
+      background: var(--gray-50); border: 1px solid var(--gray-200);
+      border-radius: 10px; padding: 24px 28px; margin: 32px 0;
+    }
+    .toc h3 { font-size: 14px; font-weight: 700; color: var(--gray-800); margin-bottom: 12px; text-transform: uppercase; letter-spacing: 1px; }
+    .toc ol { margin: 0; padding-left: 20px; }
+    .toc li { margin-bottom: 6px; }
+    .toc a { font-size: 14px; color: var(--purple); text-decoration: none; font-weight: 500; }
+    .toc a:hover { text-decoration: underline; }
+
+    /* ── FOOTER ── */
+    footer {
+      padding: 32px 0; border-top: 1px solid var(--gray-200);
+      text-align: center; background: var(--gray-50);
+    }
+    footer p { font-size: 13px; color: var(--gray-500); }
+    footer a { color: var(--gray-500); text-decoration: none; }
+    footer a:hover { color: var(--gray-900); }
+
+    @media (max-width: 480px) {
+      .page-header h1 { font-size: 28px; }
+      .content h2 { font-size: 19px; }
+      .data-table { font-size: 13px; }
+    }
+  </style>
+</head>
+<body>
+
+  <!-- NAV -->
+  <nav>
+    <div class="nav-inner">
+      <a href="salespage.html" class="nav-logo"><span>Insta-Story</span>-Outreach</a>
+      <a href="salespage.html" class="nav-back">&larr; Back to Home</a>
+    </div>
+  </nav>
+
+  <!-- HEADER -->
+  <div class="page-header">
+    <h1>Privacy Policy</h1>
+    <p class="effective">Effective Date: March 19, 2026 &nbsp;|&nbsp; Last Updated: March 19, 2026</p>
+  </div>
+
+  <!-- CONTENT -->
+  <div class="content">
+
+    <div class="highlight-box">
+      <strong>Summary:</strong> Insta-Story-Outreach-Automator does not collect, transmit, or share any user data with external servers. All data is stored locally on your device using Chrome's built-in storage API. We have no servers, no analytics, and no tracking.
+    </div>
+
+    <div class="toc">
+      <h3>Table of Contents</h3>
+      <ol>
+        <li><a href="#intro">Introduction</a></li>
+        <li><a href="#data-collected">Data Collected</a></li>
+        <li><a href="#how-data-used">How Data Is Used</a></li>
+        <li><a href="#data-storage">Data Storage &amp; Security</a></li>
+        <li><a href="#data-sharing">Data Sharing &amp; Third Parties</a></li>
+        <li><a href="#website-content">Website Content Access</a></li>
+        <li><a href="#permissions">Permission Justifications</a></li>
+        <li><a href="#user-rights">Your Rights</a></li>
+        <li><a href="#children">Children's Privacy</a></li>
+        <li><a href="#changes">Changes to This Policy</a></li>
+        <li><a href="#contact">Contact Us</a></li>
+      </ol>
+    </div>
+
+    <!-- 1 -->
+    <h2 id="intro">1. Introduction</h2>
+    <p>Insta-Story-Outreach-Automator ("the Extension") is a Chrome browser extension that helps users automate personalized direct message outreach to their Instagram story viewers. This privacy policy explains what data the Extension accesses, how it is used, and how it is stored.</p>
+    <p>By installing and using the Extension, you agree to the practices described in this policy.</p>
+
+    <!-- 2 -->
+    <h2 id="data-collected">2. Data Collected</h2>
+    <p>The Extension collects and stores the following data <strong>locally on your device only</strong>:</p>
+
+    <table class="data-table">
+      <thead>
+        <tr>
+          <th>Data Type</th>
+          <th>Description</th>
+          <th>Sent Externally?</th>
+        </tr>
+      </thead>
+      <tbody>
+        <tr>
+          <td><strong>Instagram Usernames</strong></td>
+          <td>Usernames of story viewers scraped from your own Instagram story viewer list</td>
+          <td><span class="badge-no">No</span></td>
+        </tr>
+        <tr>
+          <td><strong>Contacted Users List</strong></td>
+          <td>A list of usernames you have already messaged, used to prevent duplicate outreach</td>
+          <td><span class="badge-no">No</span></td>
+        </tr>
+        <tr>
+          <td><strong>Message Templates</strong></td>
+          <td>Default and scheduled message templates you create</td>
+          <td><span class="badge-no">No</span></td>
+        </tr>
+        <tr>
+          <td><strong>Configuration Settings</strong></td>
+          <td>Your target username, batch sizes, sleep intervals, and restricted locations</td>
+          <td><span class="badge-no">No</span></td>
+        </tr>
+        <tr>
+          <td><strong>Daily Statistics</strong></td>
+          <td>Count of messages sent and skipped per day</td>
+          <td><span class="badge-no">No</span></td>
+        </tr>
+        <tr>
+          <td><strong>Scheduled Messages</strong></td>
+          <td>Date-to-message mappings you configure for daily scheduling</td>
+          <td><span class="badge-no">No</span></td>
+        </tr>
+      </tbody>
+    </table>
+
+    <div class="highlight-box">
+      The Extension does <strong>not</strong> collect passwords, email addresses, financial information, browsing history, cookies, or any personally identifiable information beyond Instagram usernames visible on your own story viewer list.
+    </div>
+
+    <!-- 3 -->
+    <h2 id="how-data-used">3. How Data Is Used</h2>
+    <p>All data collected is used exclusively to provide the Extension's core functionality:</p>
+    <ul>
+      <li><strong>Instagram usernames</strong> are scraped from your story viewer list to identify potential outreach recipients.</li>
+      <li><strong>Contacted users list</strong> ensures the Extension never sends duplicate messages to the same person.</li>
+      <li><strong>Message templates and schedules</strong> determine what message content is sent on each day.</li>
+      <li><strong>Configuration settings</strong> control how the Extension operates (batch sizes, timing, filtering).</li>
+      <li><strong>Daily statistics</strong> are displayed in the popup dashboard for your reference.</li>
+    </ul>
+    <p>Data is never used for advertising, profiling, analytics, or any purpose beyond the Extension's stated functionality.</p>
+
+    <!-- 4 -->
+    <h2 id="data-storage">4. Data Storage &amp; Security</h2>
+    <p>All data is stored locally on your device using the <strong>Chrome Storage API</strong> (<code>chrome.storage.local</code>). This means:</p>
+    <ul>
+      <li>Data never leaves your browser or your computer.</li>
+      <li>No external servers, databases, or cloud services are involved.</li>
+      <li>Data persists across browser sessions but is removed if you uninstall the Extension.</li>
+      <li>Data is sandboxed within Chrome's extension storage and is not accessible to other extensions or websites.</li>
+    </ul>
+    <p>The Extension does not use remote code execution. All JavaScript runs locally from the files bundled within the Extension package.</p>
+
+    <!-- 5 -->
+    <h2 id="data-sharing">5. Data Sharing &amp; Third Parties</h2>
+    <p>The Extension <strong>does not</strong>:</p>
+    <ul>
+      <li>Transmit any data to external servers, APIs, or third-party services</li>
+      <li>Sell, rent, or share user data with any third party</li>
+      <li>Include any analytics, tracking, or telemetry code</li>
+      <li>Use any third-party SDKs, libraries, or external scripts</li>
+      <li>Make any network requests other than navigating to Instagram pages within your browser</li>
+    </ul>
+    <p>The only network activity performed by the Extension is navigating to Instagram URLs (<code>instagram.com</code>) within Chrome tabs to perform scraping and messaging actions on your behalf.</p>
+
+    <!-- 6 -->
+    <h2 id="website-content">6. Website Content Access</h2>
+    <p>The Extension reads content from Instagram web pages for the following purposes:</p>
+    <ul>
+      <li><strong>Story viewer list:</strong> Reads usernames from your Instagram story's "Seen by" dialog to identify outreach recipients.</li>
+      <li><strong>Profile page content:</strong> Reads text content on user profile pages to check for restricted locations before sending a message.</li>
+      <li><strong>Chat history:</strong> Reads the direct message conversation UI to detect if a previous message has already been sent (duplicate prevention).</li>
+      <li><strong>UI elements:</strong> Interacts with buttons, input fields, and navigation elements on Instagram to perform automated actions.</li>
+    </ul>
+    <p>All website content is processed locally within your browser tab. No page content is stored persistently except for the username list used for duplicate prevention.</p>
+
+    <!-- 7 -->
+    <h2 id="permissions">7. Permission Justifications</h2>
+    <table class="data-table">
+      <thead>
+        <tr>
+          <th>Permission</th>
+          <th>Why It's Needed</th>
+        </tr>
+      </thead>
+      <tbody>
+        <tr>
+          <td><strong>storage</strong></td>
+          <td>Stores your configuration, message templates, scheduled messages, contacted user memory, and daily statistics locally on your device.</td>
+        </tr>
+        <tr>
+          <td><strong>alarms</strong></td>
+          <td>Schedules the next outreach cycle after a configurable sleep interval so the Extension can run continuously in the background.</td>
+        </tr>
+        <tr>
+          <td><strong>scripting</strong></td>
+          <td>Injects content scripts into Instagram pages to scrape story viewers, navigate DM flows, and send messages on your behalf.</td>
+        </tr>
+        <tr>
+          <td><strong>activeTab</strong></td>
+          <td>Accesses the currently active Instagram tab to perform scraping and messaging actions you initiate.</td>
+        </tr>
+        <tr>
+          <td><strong>tabs</strong></td>
+          <td>Opens and navigates Instagram tabs during outreach cycles, switching between your profile page and direct messages page.</td>
+        </tr>
+        <tr>
+          <td><strong>host_permissions<br>(instagram.com)</strong></td>
+          <td>The Extension only operates on Instagram. This permission allows content scripts to run on Instagram pages to perform outreach actions.</td>
+        </tr>
+      </tbody>
+    </table>
+
+    <!-- 8 -->
+    <h2 id="user-rights">8. Your Rights</h2>
+    <p>Because all data is stored locally on your device, you have full control over it at all times:</p>
+    <ul>
+      <li><strong>View your data:</strong> Open the Extension popup to see your configuration, scheduled messages, and statistics.</li>
+      <li><strong>Delete your data:</strong> Uninstalling the Extension from Chrome automatically removes all stored data. You can also clear Extension data through Chrome's settings at <code>chrome://extensions</code>.</li>
+      <li><strong>Export your data:</strong> The contacted users list can be viewed and exported through Chrome's developer tools if needed.</li>
+      <li><strong>Modify your data:</strong> All settings, templates, and scheduled messages can be edited or removed at any time through the Extension popup.</li>
+    </ul>
+
+    <!-- 9 -->
+    <h2 id="children">9. Children's Privacy</h2>
+    <p>The Extension is not intended for use by individuals under the age of 13. We do not knowingly collect data from children. If you believe a child has used this Extension, please contact us and we will provide guidance on how to remove the locally stored data.</p>
+
+    <!-- 10 -->
+    <h2 id="changes">10. Changes to This Policy</h2>
+    <p>We may update this privacy policy from time to time. Any changes will be reflected by updating the "Last Updated" date at the top of this page. Continued use of the Extension after changes constitutes acceptance of the updated policy.</p>
+    <p>If significant changes are made to data practices (such as introducing server-side storage or third-party integrations), users will be notified through the Extension update notes on the Chrome Web Store.</p>
+
+    <!-- 11 -->
+    <h2 id="contact">11. Contact Us</h2>
+    <p>If you have questions, concerns, or requests regarding this privacy policy or the Extension's data practices, please contact us:</p>
+    <ul>
+      <li><strong>Email:</strong> <a href="mailto:engrmoshbari@gmail.com" style="color:var(--purple);">engrmoshbari@gmail.com</a></li>
+      <li><strong>GitHub:</strong> <a href="https://github.com/moshbari/instagram-story-dm-extension" style="color:var(--purple);" target="_blank">github.com/moshbari/instagram-story-dm-extension</a></li>
+    </ul>
+
+  </div>
+
+  <!-- FOOTER -->
+  <footer>
+    <div style="max-width:720px;margin:0 auto;padding:0 24px;">
+      <p style="margin-bottom:6px;">&copy; 2026 Insta-Story-Outreach-Automator. All rights reserved.</p>
+      <p>
+        <a href="salespage.html">Home</a> &nbsp;&middot;&nbsp;
+        <a href="https://github.com/moshbari/instagram-story-dm-extension" target="_blank">GitHub</a> &nbsp;&middot;&nbsp;
+        <a href="mailto:engrmoshbari@gmail.com">Contact</a>
+      </p>
+    </div>
+  </footer>
+
+</body>
+</html>
