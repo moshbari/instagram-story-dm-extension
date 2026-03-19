@@ -1,0 +1,30 @@
+{
+  "manifest_version": 3,
+  "name": "Insta Outreach Automator",
+  "version": "1.0",
+  "description": "Hands-free, chronometrically humanized Instagram story DMs perfectly avoiding detection bots.",
+  "permissions": [
+    "storage",
+    "alarms",
+    "scripting",
+    "activeTab",
+    "tabs"
+  ],
+  "host_permissions": [
+    "https://*.instagram.com/*"
+  ],
+  "background": {
+    "service_worker": "background.js"
+  },
+  "content_scripts": [
+    {
+      "matches": ["https://*.instagram.com/*"],
+      "js": ["content.js"],
+      "run_at": "document_end"
+    }
+  ],
+  "action": {
+    "default_popup": "popup.html",
+    "default_title": "Bots Dashboard"
+  }
+}

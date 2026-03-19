@@ -1,0 +1,77 @@
+<!DOCTYPE html>
+<html>
+<head>
+  <meta charset="utf-8">
+  <title>Insta Automator</title>
+  <link rel="stylesheet" href="popup.css">
+</head>
+<body>
+  <div class="header">
+    <h2 id="statusTitle">Bot: Inactive</h2>
+    <span class="pulse" id="statusDot"></span>
+  </div>
+
+  <div class="stats">
+    <p>Total Sent Today: <span id="sentToday" style="font-weight:bold; color:#28a745;">0</span></p>
+    <p>Skipped Today: <span id="skippedToday" style="font-weight:bold; color:#ed4956;">0</span></p>
+    <p>Next Batch: <span id="nextBatchTime" style="font-weight:bold;">Waiting...</span></p>
+  </div>
+
+  <div class="controls">
+    <label>Target Username (Your Account):</label>
+    <input type="text" id="targetUsername" placeholder="e.g. askmoshbari">
+
+    <label>Daily Message Template:</label>
+    <textarea id="messageTemplate" rows="4" placeholder="Hey! Thanks for watching my story..."></textarea>
+    
+    <div class="scheduler-section">
+      <label class="section-title">Scheduled Messages (Optional):</label>
+      <p class="hint">Schedule a specific message for a date. If no message is scheduled for today, the default template above is used.</p>
+      <div class="schedule-add">
+        <input type="date" id="scheduleDate">
+        <textarea id="scheduleMessage" rows="3" placeholder="Message for this date..."></textarea>
+        <button id="addScheduleBtn" class="btn-schedule">+ Add Scheduled Message</button>
+      </div>
+      <div id="scheduleList" class="schedule-list"></div>
+      <p class="today-indicator" id="todayIndicator"></p>
+    </div>
+
+    <label>Restricted Locations (Comma separated):</label>
+    <input type="text" id="restrictedLocs" value="bangladesh, india, pakistan, egypt, philippines, nigeria, kenya, ghana, south africa, uganda, africa">
+
+    <label>Import Old Memory Database (Paste bracketed array from python):</label>
+    <input type="text" id="importMemory" placeholder='["username1", "username2"]'>
+
+    <div class="limits">
+      <div>
+        <label>Min Batch</label>
+        <input type="number" id="minBatch" value="10">
+      </div>
+      <div>
+        <label>Max Batch</label>
+        <input type="number" id="maxBatch" value="30">
+      </div>
+    </div>
+    
+    <div class="limits">
+      <div>
+        <label>Min Sleep (m)</label>
+        <input type="number" id="minSleep" value="30">
+      </div>
+      <div>
+        <label>Max Sleep (m)</label>
+        <input type="number" id="maxSleep" value="90">
+      </div>
+    </div>
+
+    <button id="saveBtn" class="btn-secondary">Save Settings</button>
+  </div>
+
+  <div class="actions">
+    <button id="startBtn" class="btn-primary">Start Campaign</button>
+    <button id="stopBtn" class="btn-danger">Stop Bot</button>
+  </div>
+
+  <script src="popup.js"></script>
+</body>
+</html>
