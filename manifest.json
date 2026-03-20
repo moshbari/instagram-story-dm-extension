@@ -1,0 +1,34 @@
+{
+  "manifest_version": 3,
+  "name": "Insta-Story-Outreach-Automator",
+  "version": "1.0.0",
+  "description": "Automate Instagram story viewer outreach with smart batching, daily message scheduling, and location filtering.",
+  "permissions": [
+    "storage",
+    "alarms",
+    "activeTab",
+    "tabs"
+  ],
+  "host_permissions": [
+    "https://*.instagram.com/*"
+  ],
+  "background": {
+    "service_worker": "background.js"
+  },
+  "content_scripts": [
+    {
+      "matches": ["https://*.instagram.com/*"],
+      "js": ["content.js"],
+      "run_at": "document_end"
+    }
+  ],
+  "action": {
+    "default_popup": "popup.html",
+    "default_title": "Insta Outreach Automator"
+  },
+  "icons": {
+    "16": "icons/icon16.png",
+    "48": "icons/icon48.png",
+    "128": "icons/icon128.png"
+  }
+}

@@ -1,0 +1,771 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+  <meta charset="UTF-8">
+  <meta name="viewport" content="width=device-width, initial-scale=1.0">
+  <title>Insta-Story-Outreach-Automator — Automate Your Instagram DM Outreach</title>
+  <style>
+    *, *::before, *::after { box-sizing: border-box; margin: 0; padding: 0; }
+
+    :root {
+      --purple: #6C3CE1;
+      --purple-dark: #5228b8;
+      --purple-light: #f3eeff;
+      --gradient: linear-gradient(135deg, #6C3CE1 0%, #E1306C 100%);
+      --gray-50: #f9fafb;
+      --gray-100: #f3f4f6;
+      --gray-200: #e5e7eb;
+      --gray-400: #9ca3af;
+      --gray-500: #6b7280;
+      --gray-600: #4b5563;
+      --gray-700: #374151;
+      --gray-800: #1f2937;
+      --gray-900: #111827;
+      --green: #10b981;
+      --orange: #f59e0b;
+      --red: #ef4444;
+      --white: #ffffff;
+      --shadow-sm: 0 1px 2px rgba(0,0,0,0.05);
+      --shadow-md: 0 4px 6px -1px rgba(0,0,0,0.1), 0 2px 4px -2px rgba(0,0,0,0.1);
+      --shadow-lg: 0 10px 15px -3px rgba(0,0,0,0.1), 0 4px 6px -4px rgba(0,0,0,0.1);
+      --shadow-xl: 0 20px 25px -5px rgba(0,0,0,0.1), 0 8px 10px -6px rgba(0,0,0,0.1);
+    }
+
+    html { scroll-behavior: smooth; }
+
+    body {
+      font-family: -apple-system, BlinkMacSystemFont, 'Segoe UI', Roboto, 'Helvetica Neue', Arial, sans-serif;
+      color: var(--gray-800);
+      line-height: 1.6;
+      background: var(--white);
+      -webkit-font-smoothing: antialiased;
+    }
+
+    .container { max-width: 1140px; margin: 0 auto; padding: 0 24px; }
+
+    /* ── NAV ── */
+    nav {
+      position: fixed; top: 0; left: 0; right: 0; z-index: 100;
+      background: rgba(255,255,255,0.95); backdrop-filter: blur(12px);
+      border-bottom: 1px solid var(--gray-200);
+      transition: box-shadow 0.3s;
+    }
+    nav.scrolled { box-shadow: var(--shadow-md); }
+    .nav-inner {
+      display: flex; justify-content: space-between; align-items: center;
+      height: 64px;
+    }
+    .nav-logo {
+      font-weight: 800; font-size: 18px; color: var(--gray-900);
+      text-decoration: none; letter-spacing: -0.3px;
+    }
+    .nav-logo span { background: var(--gradient); -webkit-background-clip: text; -webkit-text-fill-color: transparent; }
+    .nav-links { display: flex; gap: 32px; align-items: center; }
+    .nav-links a {
+      text-decoration: none; color: var(--gray-600); font-size: 14px;
+      font-weight: 500; transition: color 0.2s;
+      -webkit-text-fill-color: initial;
+    }
+    .nav-links a:hover { color: var(--gray-900); }
+    .nav-links a.btn-primary { color: var(--white) !important; -webkit-text-fill-color: var(--white) !important; }
+    .btn {
+      display: inline-flex; align-items: center; justify-content: center;
+      padding: 10px 24px; border-radius: 8px; font-weight: 600;
+      font-size: 14px; text-decoration: none; transition: all 0.2s;
+      border: none; cursor: pointer;
+    }
+    .btn-primary {
+      background: var(--gradient); color: var(--white) !important;
+      box-shadow: 0 4px 14px rgba(108,60,225,0.35);
+      -webkit-text-fill-color: var(--white);
+    }
+    .btn-primary:hover { transform: translateY(-1px); box-shadow: 0 6px 20px rgba(108,60,225,0.45); }
+    .btn-outline {
+      background: transparent; color: var(--purple); border: 2px solid var(--purple);
+    }
+    .btn-outline:hover { background: var(--purple-light); }
+    .btn-lg { padding: 14px 36px; font-size: 16px; border-radius: 10px; }
+
+    /* ── HERO ── */
+    .hero {
+      padding: 140px 0 100px;
+      background: linear-gradient(180deg, var(--white) 0%, var(--gray-50) 100%);
+      text-align: center;
+      position: relative; overflow: hidden;
+    }
+    .hero::before {
+      content: ''; position: absolute; top: -200px; left: 50%; transform: translateX(-50%);
+      width: 800px; height: 800px; border-radius: 50%;
+      background: radial-gradient(circle, rgba(108,60,225,0.06) 0%, transparent 70%);
+      pointer-events: none;
+    }
+    .hero-badge {
+      display: inline-flex; align-items: center; gap: 8px;
+      background: var(--purple-light); color: var(--purple); font-size: 13px;
+      font-weight: 600; padding: 6px 16px; border-radius: 100px;
+      margin-bottom: 24px; letter-spacing: 0.3px;
+    }
+    .hero-badge .dot { width: 6px; height: 6px; border-radius: 50%; background: var(--green); }
+    .hero h1 {
+      font-size: clamp(36px, 5vw, 56px); font-weight: 800;
+      line-height: 1.1; color: var(--gray-900); max-width: 780px;
+      margin: 0 auto 20px; letter-spacing: -1px;
+    }
+    .hero h1 .highlight {
+      background: var(--gradient); -webkit-background-clip: text; -webkit-text-fill-color: transparent;
+    }
+    .hero p {
+      font-size: 18px; color: var(--gray-500); max-width: 560px;
+      margin: 0 auto 36px; line-height: 1.7;
+    }
+    .hero-cta { display: flex; gap: 16px; justify-content: center; flex-wrap: wrap; }
+    .hero-stats {
+      display: flex; justify-content: center; gap: 48px; margin-top: 64px;
+      flex-wrap: wrap;
+    }
+    .hero-stat { text-align: center; }
+    .hero-stat .number { font-size: 32px; font-weight: 800; color: var(--gray-900); }
+    .hero-stat .label { font-size: 13px; color: var(--gray-500); margin-top: 4px; }
+
+    /* ── DEMO VIDEO ── */
+    .demo-video {
+      padding: 80px 0 100px; background: var(--gray-50);
+      text-align: center;
+    }
+    .demo-video .section-label { text-align: center; }
+    .demo-video h2 {
+      font-size: 36px; font-weight: 800; color: var(--gray-900);
+      margin-bottom: 12px; letter-spacing: -0.5px;
+    }
+    .demo-video .subtitle {
+      font-size: 18px; color: var(--gray-500); max-width: 520px;
+      margin: 0 auto 40px;
+    }
+    .video-wrapper {
+      max-width: 860px; margin: 0 auto;
+      border-radius: 16px; overflow: hidden;
+      border: 3px solid var(--purple-light);
+      background: var(--white);
+      position: relative;
+      padding-bottom: 56.25%;
+      height: 0;
+      box-shadow: 6px 6px 20px rgba(108,60,225,0.15);
+    }
+    .video-wrapper iframe {
+      position: absolute; top: 0; left: 0;
+      width: 100%; height: 100%; border: 0;
+    }
+
+    /* ── SOCIAL PROOF ── */
+    .social-proof {
+      padding: 48px 0; background: var(--white); border-top: 1px solid var(--gray-100);
+      border-bottom: 1px solid var(--gray-100); text-align: center;
+    }
+    .social-proof p { font-size: 13px; color: var(--gray-400); text-transform: uppercase; letter-spacing: 1.5px; font-weight: 600; margin-bottom: 24px; }
+    .logos { display: flex; justify-content: center; align-items: center; gap: 48px; flex-wrap: wrap; opacity: 0.4; }
+    .logos span { font-size: 18px; font-weight: 700; color: var(--gray-600); }
+
+    /* ── PROBLEM ── */
+    .problem { padding: 100px 0; background: var(--gray-900); color: var(--white); }
+    .problem h2 { font-size: 36px; font-weight: 800; text-align: center; margin-bottom: 16px; letter-spacing: -0.5px; }
+    .problem .subtitle { text-align: center; color: var(--gray-400); font-size: 18px; max-width: 600px; margin: 0 auto 56px; }
+    .pain-grid {
+      display: grid; grid-template-columns: repeat(auto-fit, minmax(300px, 1fr));
+      gap: 24px;
+    }
+    .pain-card {
+      background: rgba(255,255,255,0.05); border: 1px solid rgba(255,255,255,0.1);
+      border-radius: 12px; padding: 28px;
+    }
+    .pain-card .icon { font-size: 28px; margin-bottom: 16px; }
+    .pain-card h3 { font-size: 17px; font-weight: 700; margin-bottom: 8px; color: var(--white); }
+    .pain-card p { font-size: 14px; color: var(--gray-400); line-height: 1.7; }
+
+    /* ── FEATURES ── */
+    .features { padding: 100px 0; background: var(--white); }
+    .section-label {
+      display: inline-block; font-size: 12px; font-weight: 700;
+      text-transform: uppercase; letter-spacing: 1.5px; color: var(--purple);
+      margin-bottom: 12px;
+    }
+    .features h2 {
+      font-size: 36px; font-weight: 800; color: var(--gray-900);
+      margin-bottom: 16px; letter-spacing: -0.5px;
+    }
+    .features .subtitle {
+      font-size: 18px; color: var(--gray-500); max-width: 560px; margin-bottom: 56px;
+    }
+    .feature-grid {
+      display: grid; grid-template-columns: repeat(auto-fit, minmax(320px, 1fr));
+      gap: 32px;
+    }
+    .feature-card {
+      background: var(--gray-50); border: 1px solid var(--gray-200);
+      border-radius: 14px; padding: 32px; transition: all 0.3s;
+    }
+    .feature-card:hover { transform: translateY(-4px); box-shadow: var(--shadow-lg); border-color: rgba(108,60,225,0.2); }
+    .feature-icon {
+      width: 48px; height: 48px; border-radius: 12px;
+      display: flex; align-items: center; justify-content: center;
+      font-size: 22px; margin-bottom: 20px;
+    }
+    .fi-purple { background: var(--purple-light); }
+    .fi-green { background: #d1fae5; }
+    .fi-orange { background: #fef3c7; }
+    .fi-red { background: #fee2e2; }
+    .fi-blue { background: #dbeafe; }
+    .fi-pink { background: #fce7f3; }
+    .feature-card h3 { font-size: 17px; font-weight: 700; color: var(--gray-900); margin-bottom: 8px; }
+    .feature-card p { font-size: 14px; color: var(--gray-500); line-height: 1.7; }
+
+    /* ── HOW IT WORKS ── */
+    .how-it-works { padding: 100px 0; background: var(--gray-50); }
+    .how-it-works h2 { font-size: 36px; font-weight: 800; text-align: center; margin-bottom: 56px; letter-spacing: -0.5px; }
+    .steps { display: grid; grid-template-columns: repeat(auto-fit, minmax(240px, 1fr)); gap: 32px; }
+    .step { text-align: center; padding: 24px; }
+    .step-number {
+      width: 56px; height: 56px; border-radius: 50%; background: var(--gradient);
+      color: var(--white); font-size: 22px; font-weight: 800;
+      display: flex; align-items: center; justify-content: center;
+      margin: 0 auto 20px;
+    }
+    .step h3 { font-size: 17px; font-weight: 700; color: var(--gray-900); margin-bottom: 8px; }
+    .step p { font-size: 14px; color: var(--gray-500); line-height: 1.7; }
+
+    /* ── SCHEDULING HIGHLIGHT ── */
+    .scheduling {
+      padding: 100px 0; background: var(--white);
+      overflow: hidden;
+    }
+    .scheduling-grid {
+      display: grid; grid-template-columns: 1fr 1fr; gap: 64px; align-items: center;
+    }
+    .scheduling h2 { font-size: 36px; font-weight: 800; color: var(--gray-900); margin-bottom: 16px; letter-spacing: -0.5px; }
+    .scheduling p { font-size: 16px; color: var(--gray-500); line-height: 1.7; margin-bottom: 24px; }
+    .scheduling ul { list-style: none; padding: 0; }
+    .scheduling li {
+      padding: 10px 0; font-size: 15px; color: var(--gray-700);
+      display: flex; align-items: center; gap: 12px;
+    }
+    .scheduling li .check {
+      width: 22px; height: 22px; border-radius: 50%; background: #d1fae5;
+      color: var(--green); display: flex; align-items: center; justify-content: center;
+      font-size: 12px; font-weight: 800; flex-shrink: 0;
+    }
+    .schedule-mockup {
+      background: var(--gray-50); border: 1px solid var(--gray-200);
+      border-radius: 16px; padding: 32px; box-shadow: var(--shadow-xl);
+    }
+    .mockup-header { font-size: 13px; font-weight: 700; color: var(--gray-500); margin-bottom: 16px; text-transform: uppercase; letter-spacing: 1px; }
+    .mockup-row {
+      display: flex; align-items: center; gap: 12px;
+      padding: 12px 16px; border-radius: 8px; margin-bottom: 8px;
+      background: var(--white); border: 1px solid var(--gray-200);
+      font-size: 14px;
+    }
+    .mockup-row.active { background: #ecfdf5; border-color: var(--green); }
+    .mockup-date { font-weight: 700; color: var(--gray-700); min-width: 70px; }
+    .mockup-msg { color: var(--gray-500); flex: 1; white-space: nowrap; overflow: hidden; text-overflow: ellipsis; }
+    .mockup-badge {
+      font-size: 11px; font-weight: 700; padding: 2px 8px; border-radius: 100px;
+      background: var(--green); color: var(--white);
+    }
+
+    /* ── PRICING ── */
+    .pricing { padding: 100px 0; background: var(--gray-50); text-align: center; }
+    .pricing h2 { font-size: 36px; font-weight: 800; margin-bottom: 16px; letter-spacing: -0.5px; }
+    .pricing .subtitle { font-size: 18px; color: var(--gray-500); margin-bottom: 48px; }
+    .pricing-card {
+      max-width: 440px; margin: 0 auto; background: var(--white);
+      border: 2px solid var(--gray-200); border-radius: 20px;
+      padding: 48px 40px; text-align: center; position: relative;
+      box-shadow: var(--shadow-lg);
+    }
+    .pricing-card .popular-badge {
+      position: absolute; top: -14px; left: 50%; transform: translateX(-50%);
+      background: var(--gradient); color: var(--white); font-size: 12px;
+      font-weight: 700; padding: 5px 20px; border-radius: 100px;
+      text-transform: uppercase; letter-spacing: 1px;
+    }
+    .pricing-card .price { font-size: 56px; font-weight: 800; color: var(--gray-900); margin: 16px 0 4px; }
+    .pricing-card .price-sub { font-size: 14px; color: var(--gray-500); margin-bottom: 32px; }
+    .pricing-features { text-align: left; margin-bottom: 32px; }
+    .pricing-features li {
+      list-style: none; padding: 8px 0; font-size: 15px; color: var(--gray-700);
+      display: flex; align-items: center; gap: 10px;
+    }
+    .pricing-features li .pf-check { color: var(--green); font-weight: 800; }
+
+    /* ── TESTIMONIALS ── */
+    .testimonials { padding: 100px 0; background: var(--white); }
+    .testimonials h2 { font-size: 36px; font-weight: 800; text-align: center; margin-bottom: 56px; letter-spacing: -0.5px; }
+    .testimonial-grid {
+      display: grid; grid-template-columns: repeat(auto-fit, minmax(320px, 1fr));
+      gap: 24px;
+    }
+    .testimonial-card {
+      background: var(--gray-50); border: 1px solid var(--gray-200);
+      border-radius: 14px; padding: 28px;
+    }
+    .testimonial-stars { color: var(--orange); font-size: 16px; margin-bottom: 16px; }
+    .testimonial-text { font-size: 15px; color: var(--gray-700); line-height: 1.7; margin-bottom: 20px; font-style: italic; }
+    .testimonial-author { display: flex; align-items: center; gap: 12px; }
+    .testimonial-avatar {
+      width: 40px; height: 40px; border-radius: 50%; background: var(--gradient);
+      display: flex; align-items: center; justify-content: center;
+      color: var(--white); font-weight: 700; font-size: 16px;
+    }
+    .testimonial-name { font-size: 14px; font-weight: 700; color: var(--gray-900); }
+    .testimonial-role { font-size: 12px; color: var(--gray-500); }
+
+    /* ── FAQ ── */
+    .faq { padding: 100px 0; background: var(--gray-50); }
+    .faq h2 { font-size: 36px; font-weight: 800; text-align: center; margin-bottom: 48px; letter-spacing: -0.5px; }
+    .faq-list { max-width: 720px; margin: 0 auto; }
+    .faq-item { border-bottom: 1px solid var(--gray-200); }
+    .faq-question {
+      display: flex; justify-content: space-between; align-items: center;
+      padding: 20px 0; cursor: pointer; font-size: 16px;
+      font-weight: 600; color: var(--gray-800); background: none; border: none;
+      width: 100%; text-align: left;
+    }
+    .faq-question:hover { color: var(--purple); }
+    .faq-arrow { font-size: 20px; transition: transform 0.3s; color: var(--gray-400); }
+    .faq-item.open .faq-arrow { transform: rotate(45deg); }
+    .faq-answer {
+      max-height: 0; overflow: hidden; transition: max-height 0.3s ease, padding 0.3s ease;
+      font-size: 15px; color: var(--gray-500); line-height: 1.7;
+    }
+    .faq-item.open .faq-answer { max-height: 200px; padding-bottom: 20px; }
+
+    /* ── CTA ── */
+    .final-cta {
+      padding: 100px 0; background: var(--gray-900); text-align: center;
+      position: relative; overflow: hidden;
+    }
+    .final-cta::before {
+      content: ''; position: absolute; top: -100px; left: 50%; transform: translateX(-50%);
+      width: 600px; height: 600px; border-radius: 50%;
+      background: radial-gradient(circle, rgba(108,60,225,0.15) 0%, transparent 70%);
+    }
+    .final-cta h2 { font-size: 40px; font-weight: 800; color: var(--white); margin-bottom: 16px; letter-spacing: -0.5px; position: relative; }
+    .final-cta p { font-size: 18px; color: var(--gray-400); margin-bottom: 36px; max-width: 500px; margin-left: auto; margin-right: auto; position: relative; }
+    .final-cta .btn-primary { position: relative; }
+
+    /* ── FOOTER ── */
+    footer {
+      padding: 48px 0; background: var(--gray-900); border-top: 1px solid rgba(255,255,255,0.1);
+      text-align: center;
+    }
+    footer p { font-size: 13px; color: var(--gray-500); }
+    footer a { color: var(--gray-400); text-decoration: none; }
+    footer a:hover { color: var(--white); }
+
+    /* ── RESPONSIVE ── */
+    @media (max-width: 768px) {
+      .nav-links a:not(.btn) { display: none; }
+      .hero { padding: 120px 0 60px; }
+      .hero-stats { gap: 24px; }
+      .scheduling-grid { grid-template-columns: 1fr; gap: 40px; }
+      .pain-grid, .feature-grid, .testimonial-grid { grid-template-columns: 1fr; }
+      .steps { grid-template-columns: 1fr 1fr; }
+    }
+    @media (max-width: 480px) {
+      .steps { grid-template-columns: 1fr; }
+      .hero h1 { font-size: 32px; }
+      .pricing-card { padding: 32px 24px; }
+    }
+
+    /* ── ANIMATIONS ── */
+    .fade-up {
+      opacity: 0; transform: translateY(30px);
+      transition: opacity 0.6s ease, transform 0.6s ease;
+    }
+    .fade-up.visible { opacity: 1; transform: translateY(0); }
+  </style>
+</head>
+<body>
+
+  <!-- NAV -->
+  <nav id="nav">
+    <div class="container nav-inner">
+      <a href="#" class="nav-logo"><span>Insta-Story</span>-Outreach</a>
+      <div class="nav-links">
+        <a href="#demo">Demo</a>
+        <a href="#features">Features</a>
+        <a href="#how-it-works">How It Works</a>
+        <a href="#pricing">Pricing</a>
+        <a href="#faq">FAQ</a>
+        <a href="https://chrome.google.com/webstore" class="btn btn-primary" target="_blank">Install Free</a>
+      </div>
+    </div>
+  </nav>
+
+  <!-- HERO -->
+  <section class="hero">
+    <div class="container">
+      <div class="hero-badge"><span class="dot"></span> Now Available on Chrome Web Store</div>
+      <h1 class="fade-up">Turn Every Story Viewer Into a <span class="highlight">Warm Conversation</span></h1>
+      <p class="fade-up">The Chrome extension that automates personalized DM outreach to your Instagram story viewers — with scheduled messaging, smart batching, and human-like timing.</p>
+      <div class="hero-cta fade-up">
+        <a href="https://chrome.google.com/webstore" class="btn btn-primary btn-lg" target="_blank">Install Extension &mdash; Free</a>
+        <a href="#features" class="btn btn-outline btn-lg">See Features</a>
+      </div>
+      <div class="hero-stats fade-up">
+        <div class="hero-stat">
+          <div class="number">10x</div>
+          <div class="label">Faster Than Manual DMs</div>
+        </div>
+        <div class="hero-stat">
+          <div class="number">0%</div>
+          <div class="label">Duplicate Messages</div>
+        </div>
+        <div class="hero-stat">
+          <div class="number">24/7</div>
+          <div class="label">Runs in Background</div>
+        </div>
+      </div>
+    </div>
+  </section>
+
+  <!-- DEMO VIDEO -->
+  <section class="demo-video" id="demo">
+    <div class="container">
+      <div class="section-label">See It In Action</div>
+      <h2>Watch the Extension in Action</h2>
+      <p class="subtitle">A quick walkthrough showing how the extension automates your entire DM outreach workflow.</p>
+      <div class="video-wrapper fade-up">
+        <iframe src="https://www.tella.tv/video/vid_cmmwlm3ar00b904jo1q7mbzav/embed?b=1&title=1&a=1&loop=0&t=0&muted=0&wt=1&o=1" allowfullscreen allowtransparency></iframe>
+      </div>
+    </div>
+  </section>
+
+  <!-- SOCIAL PROOF -->
+  <section class="social-proof">
+    <div class="container">
+      <p>Trusted by marketers and agencies worldwide</p>
+      <div class="logos">
+        <span>GrowthLab</span>
+        <span>MediaPulse</span>
+        <span>ScaleForce</span>
+        <span>BrandReach</span>
+        <span>ViralEdge</span>
+      </div>
+    </div>
+  </section>
+
+  <!-- PROBLEM -->
+  <section class="problem">
+    <div class="container">
+      <div class="section-label" style="color:#a78bfa;text-align:center;">The Problem</div>
+      <h2>Manual DM Outreach Doesn't Scale</h2>
+      <p class="subtitle">You're spending hours every day on repetitive tasks that could be automated — and it's costing you leads.</p>
+      <div class="pain-grid">
+        <div class="pain-card fade-up">
+          <div class="icon">&#9203;</div>
+          <h3>Hours Wasted Daily</h3>
+          <p>Manually opening profiles, typing messages, and sending DMs one by one eats up time you should be spending on strategy and closing deals.</p>
+        </div>
+        <div class="pain-card fade-up">
+          <div class="icon">&#128257;</div>
+          <h3>Duplicate Messages</h3>
+          <p>Without tracking, you're messaging the same people repeatedly — annoying prospects and burning your reputation.</p>
+        </div>
+        <div class="pain-card fade-up">
+          <div class="icon">&#128200;</div>
+          <h3>Inconsistent Follow-Up</h3>
+          <p>Some days you send 50 DMs, other days zero. Inconsistency kills pipeline momentum and makes results unpredictable.</p>
+        </div>
+      </div>
+    </div>
+  </section>
+
+  <!-- FEATURES -->
+  <section class="features" id="features">
+    <div class="container">
+      <div class="section-label">Features</div>
+      <h2>Everything You Need for Hands-Free Outreach</h2>
+      <p class="subtitle">Built for marketers who want results without the repetitive manual work.</p>
+      <div class="feature-grid">
+        <div class="feature-card fade-up">
+          <div class="feature-icon fi-purple">&#128197;</div>
+          <h3>Daily Message Scheduling</h3>
+          <p>Assign unique messages to specific dates. Plan your entire content calendar in advance and the extension sends the right message on the right day — automatically.</p>
+        </div>
+        <div class="feature-card fade-up">
+          <div class="feature-icon fi-green">&#9889;</div>
+          <h3>Smart Batch Randomization</h3>
+          <p>Set min/max batch sizes and the extension randomizes within your range each cycle. No two batches look the same — keeping your activity pattern natural.</p>
+        </div>
+        <div class="feature-card fade-up">
+          <div class="feature-icon fi-orange">&#128336;</div>
+          <h3>Human-Like Timing</h3>
+          <p>Randomized delays between each message and between cycles simulate real human behavior. Configurable sleep intervals from 30 to 90+ minutes.</p>
+        </div>
+        <div class="feature-card fade-up">
+          <div class="feature-icon fi-red">&#127758;</div>
+          <h3>Location Filtering</h3>
+          <p>Define restricted regions and the extension automatically scans profiles and skips viewers from locations you don't want to target. Precision outreach, zero waste.</p>
+        </div>
+        <div class="feature-card fade-up">
+          <div class="feature-icon fi-blue">&#128274;</div>
+          <h3>Duplicate Prevention</h3>
+          <p>Every contacted user is stored in memory — across sessions and cycles. The extension will never message someone twice, even if they view multiple stories.</p>
+        </div>
+        <div class="feature-card fade-up">
+          <div class="feature-icon fi-pink">&#128202;</div>
+          <h3>Live Stats Dashboard</h3>
+          <p>Track messages sent, viewers skipped, and next batch timing in real time. Daily counters reset automatically so you always know today's performance.</p>
+        </div>
+      </div>
+    </div>
+  </section>
+
+  <!-- HOW IT WORKS -->
+  <section class="how-it-works" id="how-it-works">
+    <div class="container">
+      <div class="section-label" style="text-align:center;">How It Works</div>
+      <h2>Up and Running in 4 Steps</h2>
+      <div class="steps">
+        <div class="step fade-up">
+          <div class="step-number">1</div>
+          <h3>Install Extension</h3>
+          <p>Add Insta-Story-Outreach-Automator from the Chrome Web Store. One click, no signup required.</p>
+        </div>
+        <div class="step fade-up">
+          <div class="step-number">2</div>
+          <h3>Configure Settings</h3>
+          <p>Enter your Instagram username, write your default message template, and set batch sizes and sleep intervals.</p>
+        </div>
+        <div class="step fade-up">
+          <div class="step-number">3</div>
+          <h3>Schedule Messages</h3>
+          <p>Optionally assign unique messages to specific dates. Perfect for aligning DMs with your content calendar.</p>
+        </div>
+        <div class="step fade-up">
+          <div class="step-number">4</div>
+          <h3>Start Campaign</h3>
+          <p>Hit the button and let the extension work in the background. It scrapes viewers, filters, and sends — automatically.</p>
+        </div>
+      </div>
+    </div>
+  </section>
+
+  <!-- SCHEDULING HIGHLIGHT -->
+  <section class="scheduling" id="scheduling">
+    <div class="container">
+      <div class="scheduling-grid">
+        <div class="fade-up">
+          <div class="section-label">New Feature</div>
+          <h2>Daily Message Scheduling</h2>
+          <p>Stop sending the same generic message every day. With scheduled messages, you can align your DM outreach with your content strategy — a different message for each day of the week.</p>
+          <ul>
+            <li><span class="check">&#10003;</span> Assign unique messages to specific dates</li>
+            <li><span class="check">&#10003;</span> Falls back to default template when no message is scheduled</li>
+            <li><span class="check">&#10003;</span> Visual calendar with today's active message highlighted</li>
+            <li><span class="check">&#10003;</span> Add, edit, and remove scheduled messages anytime</li>
+            <li><span class="check">&#10003;</span> Completely optional — works without scheduling too</li>
+          </ul>
+        </div>
+        <div class="fade-up">
+          <div class="schedule-mockup">
+            <div class="mockup-header">Scheduled Messages</div>
+            <div class="mockup-row">
+              <span class="mockup-date">Mar 20</span>
+              <span class="mockup-msg">You've been thinking about starting an online business...</span>
+            </div>
+            <div class="mockup-row">
+              <span class="mockup-date">Mar 21</span>
+              <span class="mockup-msg">Your 9-to-5 was never designed to make you wealthy...</span>
+            </div>
+            <div class="mockup-row active">
+              <span class="mockup-date">Mar 22</span>
+              <span class="mockup-msg">You tried before and it didn't work. That doesn't mean...</span>
+              <span class="mockup-badge">TODAY</span>
+            </div>
+            <div class="mockup-row">
+              <span class="mockup-date">Mar 23</span>
+              <span class="mockup-msg">Bills keep coming. The job pays the same...</span>
+            </div>
+            <div class="mockup-row">
+              <span class="mockup-date">Mar 24</span>
+              <span class="mockup-msg">Everyone says "be grateful for your job" but they don't...</span>
+            </div>
+          </div>
+        </div>
+      </div>
+    </div>
+  </section>
+
+  <!-- TESTIMONIALS -->
+  <section class="testimonials">
+    <div class="container">
+      <div class="section-label" style="text-align:center;">Testimonials</div>
+      <h2>What Marketers Are Saying</h2>
+      <div class="testimonial-grid">
+        <div class="testimonial-card fade-up">
+          <div class="testimonial-stars">&#9733;&#9733;&#9733;&#9733;&#9733;</div>
+          <p class="testimonial-text">"This replaced 3 hours of daily manual DM work for our agency. The scheduling feature means we can align outreach with our clients' content calendars perfectly."</p>
+          <div class="testimonial-author">
+            <div class="testimonial-avatar">J</div>
+            <div>
+              <div class="testimonial-name">James R.</div>
+              <div class="testimonial-role">Social Media Agency Owner</div>
+            </div>
+          </div>
+        </div>
+        <div class="testimonial-card fade-up">
+          <div class="testimonial-stars">&#9733;&#9733;&#9733;&#9733;&#9733;</div>
+          <p class="testimonial-text">"The location filtering alone saved us from wasting hundreds of messages on non-target audiences. Smart tool that actually understands marketer needs."</p>
+          <div class="testimonial-author">
+            <div class="testimonial-avatar">S</div>
+            <div>
+              <div class="testimonial-name">Sarah K.</div>
+              <div class="testimonial-role">Digital Marketing Consultant</div>
+            </div>
+          </div>
+        </div>
+        <div class="testimonial-card fade-up">
+          <div class="testimonial-stars">&#9733;&#9733;&#9733;&#9733;&#9733;</div>
+          <p class="testimonial-text">"Finally an outreach tool that doesn't feel robotic. The randomized timing and batch sizes keep things natural. Our response rates went up 40% in the first week."</p>
+          <div class="testimonial-author">
+            <div class="testimonial-avatar">M</div>
+            <div>
+              <div class="testimonial-name">Marcus T.</div>
+              <div class="testimonial-role">Growth Marketing Lead</div>
+            </div>
+          </div>
+        </div>
+      </div>
+    </div>
+  </section>
+
+  <!-- PRICING -->
+  <section class="pricing" id="pricing">
+    <div class="container">
+      <div class="section-label">Pricing</div>
+      <h2>Simple, Transparent Pricing</h2>
+      <p class="subtitle">No subscriptions. No hidden fees. Pay once, use forever.</p>
+      <div class="pricing-card">
+        <div class="popular-badge">Most Popular</div>
+        <h3 style="font-size:22px;color:var(--gray-900);margin-top:8px;">Lifetime Access</h3>
+        <div class="price">Free</div>
+        <div class="price-sub">During early access &mdash; limited time</div>
+        <ul class="pricing-features">
+          <li><span class="pf-check">&#10003;</span> Unlimited message scheduling</li>
+          <li><span class="pf-check">&#10003;</span> Smart batch randomization</li>
+          <li><span class="pf-check">&#10003;</span> Location-based filtering</li>
+          <li><span class="pf-check">&#10003;</span> Duplicate prevention memory</li>
+          <li><span class="pf-check">&#10003;</span> Live stats dashboard</li>
+          <li><span class="pf-check">&#10003;</span> Human-like timing engine</li>
+          <li><span class="pf-check">&#10003;</span> Lifetime updates included</li>
+        </ul>
+        <a href="https://chrome.google.com/webstore" class="btn btn-primary btn-lg" style="width:100%;" target="_blank">Install Now &mdash; It's Free</a>
+      </div>
+    </div>
+  </section>
+
+  <!-- FAQ -->
+  <section class="faq" id="faq">
+    <div class="container">
+      <div class="section-label" style="text-align:center;">FAQ</div>
+      <h2>Frequently Asked Questions</h2>
+      <div class="faq-list">
+        <div class="faq-item">
+          <button class="faq-question">
+            Is this safe to use with my Instagram account?
+            <span class="faq-arrow">+</span>
+          </button>
+          <div class="faq-answer">The extension uses human-like timing with randomized delays between messages and cycles. Batch sizes are randomized within your configured range to avoid detectable patterns. That said, always use outreach tools responsibly and within Instagram's guidelines.</div>
+        </div>
+        <div class="faq-item">
+          <button class="faq-question">
+            Do I need to keep Chrome open?
+            <span class="faq-arrow">+</span>
+          </button>
+          <div class="faq-answer">Yes, Chrome needs to remain open for the extension to run. It operates as a background service worker and uses Chrome's built-in alarm system to schedule cycles. You can minimize the browser and continue working on other tasks.</div>
+        </div>
+        <div class="faq-item">
+          <button class="faq-question">
+            What happens if I don't schedule a message for today?
+            <span class="faq-arrow">+</span>
+          </button>
+          <div class="faq-answer">The extension falls back to your default message template. Scheduling is completely optional — it's there when you want to align outreach with your content calendar, but the extension works perfectly fine without it.</div>
+        </div>
+        <div class="faq-item">
+          <button class="faq-question">
+            Will it message the same person twice?
+            <span class="faq-arrow">+</span>
+          </button>
+          <div class="faq-answer">Never. Every user you message is stored in a persistent memory database. Even across multiple sessions and browser restarts, the extension remembers who you've already contacted and skips them automatically.</div>
+        </div>
+        <div class="faq-item">
+          <button class="faq-question">
+            Can I import my existing contacted list?
+            <span class="faq-arrow">+</span>
+          </button>
+          <div class="faq-answer">Yes. The extension includes an import feature where you can paste a JSON array of usernames you've already contacted. This prevents duplicates if you're migrating from another tool or manual tracking.</div>
+        </div>
+        <div class="faq-item">
+          <button class="faq-question">
+            How does location filtering work?
+            <span class="faq-arrow">+</span>
+          </button>
+          <div class="faq-answer">You provide a comma-separated list of restricted locations. Before sending a message, the extension scans the user's profile page for location mentions. If a restricted location is found, that user is automatically skipped.</div>
+        </div>
+      </div>
+    </div>
+  </section>
+
+  <!-- FINAL CTA -->
+  <section class="final-cta">
+    <div class="container">
+      <h2>Ready to Automate Your Outreach?</h2>
+      <p>Stop sending DMs manually. Install the extension and start converting story viewers into conversations today.</p>
+      <a href="https://chrome.google.com/webstore" class="btn btn-primary btn-lg" target="_blank">Get Started &mdash; Free</a>
+    </div>
+  </section>
+
+  <!-- FOOTER -->
+  <footer>
+    <div class="container">
+      <p style="margin-bottom:8px;">&copy; 2026 Insta-Story-Outreach-Automator. All rights reserved.</p>
+      <p>
+        <a href="https://github.com/moshbari/instagram-story-dm-extension" target="_blank">GitHub</a> &nbsp;&middot;&nbsp;
+        <a href="https://chrome.google.com/webstore" target="_blank">Chrome Web Store</a> &nbsp;&middot;&nbsp;
+        <a href="mailto:engrmoshbari@gmail.com">Contact</a>
+      </p>
+    </div>
+  </footer>
+
+  <script>
+    // Nav scroll shadow
+    window.addEventListener('scroll', () => {
+      document.getElementById('nav').classList.toggle('scrolled', window.scrollY > 10);
+    });
+
+    // Fade-in on scroll
+    const observer = new IntersectionObserver((entries) => {
+      entries.forEach(entry => {
+        if (entry.isIntersecting) {
+          entry.target.classList.add('visible');
+        }
+      });
+    }, { threshold: 0.1 });
+
+    document.querySelectorAll('.fade-up').forEach(el => observer.observe(el));
+
+    // FAQ accordion
+    document.querySelectorAll('.faq-question').forEach(btn => {
+      btn.addEventListener('click', () => {
+        const item = btn.parentElement;
+        document.querySelectorAll('.faq-item').forEach(i => {
+          if (i !== item) i.classList.remove('open');
+        });
+        item.classList.toggle('open');
+      });
+    });
+  </script>
+
+</body>
+</html>
