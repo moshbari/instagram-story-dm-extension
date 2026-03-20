@@ -133,6 +133,142 @@ document.addEventListener('DOMContentLoaded', () => {
         });
     }
 
+    // --- Bulk Paste Scheduling ---
+    const bulkPasteInput = document.getElementById('bulkPasteInput');
+    const bulkParseBtn = document.getElementById('bulkParseBtn');
+    const bulkStatus = document.getElementById('bulkStatus');
+
+    // Parse bulk text format like:
+    // "March 19:\nMessage text...\n\nMarch 20:\nAnother message..."
+    // Also supports: "March 19, 2026:", "Mar 19:", "19 March:", "2026-03-19:"
+    function parseBulkMessages(text) {
+        const results = [];
+        const currentYear = new Date().getFullYear();
+
+        // Split by date headers — lines that end with a colon and look like dates
+        // Match patterns: "March 19:", "March 19, 2026:", "Mar 19:", "19 March:", etc.
+        const monthNames = ['january','february','march','april','may','june','july','august','september','october','november','december'];
+        const monthShort = ['jan','feb','mar','apr','may','jun','jul','aug','sep','oct','nov','dec'];
+
+        // Split text into blocks by looking for date-like lines ending with ":"
+        const lines = text.split('\n');
+        let currentDate = null;
+        let currentMessage = [];
+
+        for (const line of lines) {
+            const trimmed = line.trim();
+
+            // Try to detect if this line is a date header
+            const dateMatch = tryParseDate(trimmed, currentYear, monthNames, monthShort);
+
+            if (dateMatch) {
+                // Save previous block
+                if (currentDate && currentMessage.length > 0) {
+                    results.push({ date: currentDate, message: currentMessage.join('\n').trim() });
+                }
+                currentDate = dateMatch;
+                currentMessage = [];
+            } else if (currentDate) {
+                // This is message content
+                currentMessage.push(line.trimEnd());
+            }
+        }
+
+        // Save last block
+        if (currentDate && currentMessage.length > 0) {
+            results.push({ date: currentDate, message: currentMessage.join('\n').trim() });
+        }
+
+        return results;
+    }
+
+    function tryParseDate(line, currentYear, monthNames, monthShort) {
+        // Remove trailing colon
+        if (!line.endsWith(':')) return null;
+        const dateStr = line.slice(0, -1).trim().toLowerCase();
+
+        // Pattern 1: "March 19" or "March 19, 2026"
+        for (let i = 0; i < monthNames.length; i++) {
+            const fullName = monthNames[i];
+            const shortName = monthShort[i];
+            const monthNum = i + 1;
+
+            // "march 19" or "mar 19"
+            let match = dateStr.match(new RegExp(`^(${fullName}|${shortName})\\s+(\\d{1,2})(?:,?\\s*(\\d{4}))?$`));
+            if (match) {
+                const day = parseInt(match[2]);
+                const year = match[3] ? parseInt(match[3]) : currentYear;
+                return formatISO(year, monthNum, day);
+            }
+
+            // "19 march" or "19 mar"
+            match = dateStr.match(new RegExp(`^(\\d{1,2})\\s+(${fullName}|${shortName})(?:,?\\s*(\\d{4}))?$`));
+            if (match) {
+                const day = parseInt(match[1]);
+                const year = match[3] ? parseInt(match[3]) : currentYear;
+                return formatISO(year, monthNum, day);
+            }
+        }
+
+        // Pattern 2: "2026-03-19" (ISO format)
+        const isoMatch = dateStr.match(/^(\d{4})-(\d{2})-(\d{2})$/);
+        if (isoMatch) {
+            return dateStr;
+        }
+
+        // Pattern 3: "03/19/2026" or "03/19"
+        const slashMatch = dateStr.match(/^(\d{1,2})\/(\d{1,2})(?:\/(\d{4}))?$/);
+        if (slashMatch) {
+            const month = parseInt(slashMatch[1]);
+            const day = parseInt(slashMatch[2]);
+            const year = slashMatch[3] ? parseInt(slashMatch[3]) : currentYear;
+            return formatISO(year, month, day);
+        }
+
+        return null;
+    }
+
+    function formatISO(year, month, day) {
+        return `${year}-${String(month).padStart(2, '0')}-${String(day).padStart(2, '0')}`;
+    }
+
+    bulkParseBtn.addEventListener('click', () => {
+        const text = bulkPasteInput.value.trim();
+        if (!text) {
+            bulkStatus.textContent = 'Paste your messages first!';
+            bulkStatus.style.color = '#ed4956';
+            setTimeout(() => bulkStatus.textContent = '', 2000);
+            return;
+        }
+
+        const parsed = parseBulkMessages(text);
+        if (parsed.length === 0) {
+            bulkStatus.textContent = 'Could not find any dates. Use format: "March 19:" followed by message.';
+            bulkStatus.style.color = '#ed4956';
+            setTimeout(() => bulkStatus.textContent = '', 3000);
+            return;
+        }
+
+        // Merge with existing scheduled messages
+        chrome.storage.local.get(['scheduledMessages'], (res) => {
+            let scheduled = res.scheduledMessages || [];
+
+            for (const item of parsed) {
+                // Replace if same date exists
+                scheduled = scheduled.filter(s => s.date !== item.date);
+                scheduled.push(item);
+            }
+
+            chrome.storage.local.set({ scheduledMessages: scheduled }, () => {
+                bulkPasteInput.value = '';
+                bulkStatus.textContent = `${parsed.length} message${parsed.length > 1 ? 's' : ''} scheduled!`;
+                bulkStatus.style.color = '#28a745';
+                setTimeout(() => bulkStatus.textContent = '', 3000);
+                renderScheduleList(scheduled);
+            });
+        });
+    });
+
     addScheduleBtn.addEventListener('click', () => {
         const date = scheduleDateInput.value;
         const message = scheduleMessageInput.value.trim();

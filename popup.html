@@ -26,12 +26,33 @@
     
     <div class="scheduler-section">
       <label class="section-title">Scheduled Messages (Optional):</label>
-      <p class="hint">Schedule a specific message for a date. If no message is scheduled for today, the default template above is used.</p>
+      <p class="hint">If no message is scheduled for today, the default template above is used.</p>
+
+      <!-- Bulk Paste Area -->
+      <div class="bulk-paste-area">
+        <label class="bulk-label">Bulk Paste from Claude:</label>
+        <textarea id="bulkPasteInput" rows="8" placeholder="Paste your messages here. Format:
+
+March 19:
+Your message text here...
+
+March 20:
+Another message here..."></textarea>
+        <div class="bulk-actions">
+          <button id="bulkParseBtn" class="btn-schedule btn-bulk">Schedule All</button>
+          <span id="bulkStatus" class="bulk-status"></span>
+        </div>
+      </div>
+
+      <div class="divider-or"><span>or add one by one</span></div>
+
+      <!-- Single Add -->
       <div class="schedule-add">
         <input type="date" id="scheduleDate">
         <textarea id="scheduleMessage" rows="3" placeholder="Message for this date..."></textarea>
         <button id="addScheduleBtn" class="btn-schedule">+ Add Scheduled Message</button>
       </div>
+
       <div id="scheduleList" class="schedule-list"></div>
       <p class="today-indicator" id="todayIndicator"></p>
     </div>
