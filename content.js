@@ -1,3 +1,6 @@
+const CONTENT_VERSION = "v5-2026-03-21";
+console.log(`[BOT] Content script loaded. Version: ${CONTENT_VERSION}`);
+
 async function sleep(ms) {
     return new Promise(resolve => setTimeout(resolve, ms));
 }
@@ -26,11 +29,12 @@ function findByText(selector, text, exact = true) {
     return null;
 }
 
-// Scrapes the story viewers
+// ==========================================
+// ACTION 1: SCRAPE VIEWERS from story page
+// ==========================================
 async function scrapeViewers() {
     console.log("[BOT] === SCRAPE VIEWERS START ===");
     try {
-        // Step 1: Open the story
         const storyRing = document.querySelector("header canvas");
         if (!storyRing) return { error: "No active story found on this profile." };
         storyRing.click();
@@ -38,11 +42,9 @@ async function scrapeViewers() {
 
         await humanDelay(3, 5);
 
-        // Step 2: Find and click "Seen by X" or the eye icon at the bottom of the story
-        // Instagram shows either "Seen by X" text or a viewers icon
+        // Find and click "Seen by" or viewers icon
         let clickedViewers = false;
 
-        // Try 1: Look for "Seen by" text
         const seenBySpan = findByText("span", "seen by", false);
         if (seenBySpan) {
             console.log("[BOT] Found 'Seen by' text. Clicking...");
@@ -51,7 +53,6 @@ async function scrapeViewers() {
             clickedViewers = true;
         }
 
-        // Try 2: Look for the eye/viewers icon (SVG with aria-label)
         if (!clickedViewers) {
             const eyeIcon = document.querySelector('svg[aria-label*="viewer" i], svg[aria-label*="Seen" i]');
             if (eyeIcon) {
@@ -62,7 +63,6 @@ async function scrapeViewers() {
             }
         }
 
-        // Try 3: Look for any span that already says "Viewers" (dialog might already be open)
         if (!clickedViewers) {
             const viewersSpan = findByText("span", "viewers", false);
             if (viewersSpan) {
@@ -73,34 +73,23 @@ async function scrapeViewers() {
             }
         }
 
-        if (!clickedViewers) {
-            return { error: "'Seen by / Viewers' button not found anywhere." };
-        }
+        if (!clickedViewers) return { error: "'Seen by / Viewers' button not found." };
 
         await humanDelay(2, 3);
 
-        // Step 3: Find the VIEWERS dialog — NOT the story overlay
-        // There may be multiple div[role="dialog"] on the page.
-        // The viewers dialog is the one that contains profile links (/username/) or
-        // has "Viewers" as a title. We need the LAST/topmost dialog.
+        // Find the VIEWERS dialog (not the story overlay)
         console.log("[BOT] Looking for viewers dialog...");
-
         let viewersDialog = null;
         const allDialogs = document.querySelectorAll('div[role="dialog"]');
         console.log(`[BOT] Found ${allDialogs.length} dialog(s) on page.`);
 
-        if (allDialogs.length === 0) {
-            return { error: "No dialog found on page." };
-        }
+        if (allDialogs.length === 0) return { error: "No dialog found on page." };
 
-        // Strategy: check each dialog (last first) for viewer-like content
         for (let i = allDialogs.length - 1; i >= 0; i--) {
             const d = allDialogs[i];
-
-            // Check if this dialog has "Viewers" title text
-            const hasViewersTitle = findByTextInContainer(d, "span", "viewers");
-
-            // Check if this dialog has profile links (hrefs like /username/)
+            const hasViewersTitle = !!Array.from(d.querySelectorAll("span")).find(s =>
+                (s.textContent || "").trim().toLowerCase() === "viewers"
+            );
             const profileLinks = d.querySelectorAll('a[href^="/"]');
             let profileLinkCount = 0;
             for (const link of profileLinks) {
@@ -110,30 +99,24 @@ async function scrapeViewers() {
                     profileLinkCount++;
                 }
             }
-
-            // Check if this dialog has profile pictures
             const profilePics = d.querySelectorAll('img[alt*="profile picture"]');
-
-            console.log(`[BOT] Dialog ${i}: title=${hasViewersTitle ? 'YES' : 'NO'}, profileLinks=${profileLinkCount}, profilePics=${profilePics.length}`);
+            console.log(`[BOT] Dialog ${i}: title=${hasViewersTitle}, links=${profileLinkCount}, pics=${profilePics.length}`);
 
             if (hasViewersTitle || profileLinkCount >= 2 || profilePics.length >= 2) {
                 viewersDialog = d;
-                console.log(`[BOT] Selected dialog ${i} as the viewers dialog.`);
+                console.log(`[BOT] Selected dialog ${i} as viewers dialog.`);
                 break;
             }
         }
 
-        // Fallback: just use the last dialog
         if (!viewersDialog) {
             viewersDialog = allDialogs[allDialogs.length - 1];
-            console.log("[BOT] No dialog matched viewers criteria. Using last dialog as fallback.");
+            console.log("[BOT] Fallback: using last dialog.");
         }
 
-        // Step 4: Collect usernames with multiple strategies
+        // Collect usernames
         function collectUsernames() {
             const viewers = new Set();
-
-            // Strategy 1: Profile links inside the viewers dialog
             const links = viewersDialog.querySelectorAll("a[href]");
             for (const link of links) {
                 const href = link.getAttribute('href') || "";
@@ -144,46 +127,31 @@ async function scrapeViewers() {
                     }
                 }
             }
-
-            // Strategy 2: Profile picture alt text
             if (viewers.size === 0) {
                 const imgs = viewersDialog.querySelectorAll('img[alt]');
                 for (const img of imgs) {
                     const alt = img.getAttribute('alt') || "";
                     if (alt.includes("profile picture")) {
                         const un = alt.split("'")[0].trim();
-                        if (un && un.length > 0 && !un.includes(' ')) {
-                            viewers.add(un);
-                        }
+                        if (un && un.length > 0 && !un.includes(' ')) viewers.add(un);
                     }
                 }
             }
-
-            // Strategy 3: Look for username-like text in list items
             if (viewers.size === 0) {
                 const items = viewersDialog.querySelectorAll('li, div[role="listitem"], div[role="row"]');
                 for (const item of items) {
-                    const spans = item.querySelectorAll('span');
-                    for (const span of spans) {
+                    for (const span of item.querySelectorAll('span')) {
                         const text = (span.textContent || "").trim();
-                        // Username pattern: lowercase, numbers, underscores, periods, 1-30 chars
-                        if (text && /^[a-z0-9._]{1,30}$/.test(text) && !text.includes(' ')) {
-                            viewers.add(text);
-                        }
+                        if (text && /^[a-z0-9._]{1,30}$/.test(text)) viewers.add(text);
                     }
                 }
             }
-
             return viewers;
         }
 
-        // Step 5: Scroll to load all viewers
-        console.log("[BOT] Scrolling to load all viewers...");
-
-        // Find the scrollable element inside the viewers dialog
+        // Find scrollable container
         let scrollTarget = null;
-        const scrollables = viewersDialog.querySelectorAll('div');
-        for (const div of scrollables) {
+        for (const div of viewersDialog.querySelectorAll('div')) {
             const style = window.getComputedStyle(div);
             if ((style.overflowY === 'auto' || style.overflowY === 'scroll') && div.scrollHeight > div.clientHeight) {
                 scrollTarget = div;
@@ -191,38 +159,29 @@ async function scrapeViewers() {
         }
         if (!scrollTarget) scrollTarget = viewersDialog;
 
-        console.log(`[BOT] Scroll target found: ${scrollTarget === viewersDialog ? 'dialog itself' : 'inner div'}`);
-
+        // Scroll to load all viewers
         let lastCount = 0;
         let noChangeRuns = 0;
-
         for (let round = 0; round < 40; round++) {
-            const current = collectUsernames();
-            const count = current.size;
-
+            const count = collectUsernames().size;
             if (count > lastCount) {
-                console.log(`[BOT] Scroll round ${round}: ${count} viewers found (new!)`);
+                console.log(`[BOT] Round ${round}: ${count} viewers`);
                 lastCount = count;
                 noChangeRuns = 0;
-                // Scroll down
                 scrollTarget.scrollTop = scrollTarget.scrollHeight;
                 await sleep(1500);
             } else {
                 noChangeRuns++;
                 scrollTarget.scrollTop = scrollTarget.scrollHeight;
                 await sleep(500);
-                if (noChangeRuns >= 5) {
-                    console.log(`[BOT] No new viewers for ${noChangeRuns} rounds. Done scrolling.`);
-                    break;
-                }
+                if (noChangeRuns >= 5) break;
             }
         }
 
-        // Final collection
         const finalViewers = collectUsernames();
-        console.log(`[BOT] === SCRAPE COMPLETE: ${finalViewers.size} viewers collected ===`);
+        console.log(`[BOT] === SCRAPE COMPLETE: ${finalViewers.size} viewers ===`);
 
-        // Close the viewers dialog by pressing Escape or clicking X
+        // Close dialogs
         try {
             document.dispatchEvent(new KeyboardEvent('keydown', { key: 'Escape', code: 'Escape', keyCode: 27, bubbles: true }));
             await sleep(500);
@@ -236,129 +195,114 @@ async function scrapeViewers() {
     }
 }
 
-// Helper: find element by text within a specific container
-function findByTextInContainer(container, selector, text) {
-    const els = container.querySelectorAll(selector);
-    const lowerText = text.toLowerCase();
-    for (const el of els) {
-        const t = (el.textContent || "").trim().toLowerCase();
-        if (t.includes(lowerText)) return el;
+// ==========================================
+// ACTION 2: SCAN PROFILE for location info
+// Called on the user's profile page (instagram.com/username/)
+// This page has clean DOM — just bio, name, stats
+// ==========================================
+async function scanProfile() {
+    console.log("[BOT] === SCAN PROFILE START ===");
+    try {
+        // Wait for profile to load
+        await sleep(2000);
+
+        let bioText = "";
+
+        // Read the bio/description section
+        // On a profile page, the bio is in a specific section with spans
+        const mainArea = document.querySelector('main') || document.querySelector('div[role="main"]') || document.body;
+
+        // Strategy 1: Find the header section which contains name + bio
+        const header = mainArea.querySelector('header');
+        if (header) {
+            // Read the section AFTER the header (contains bio text)
+            const headerParent = header.parentElement;
+            if (headerParent) {
+                // Get all spans in the header parent area (name, bio, link)
+                const spans = headerParent.querySelectorAll('span');
+                for (const span of spans) {
+                    const text = (span.textContent || "").trim();
+                    if (text.length > 0 && text.length < 300) {
+                        bioText += " " + text.toLowerCase();
+                    }
+                }
+            }
+        }
+
+        // Strategy 2: Also read any link in the bio area
+        const bioLinks = mainArea.querySelectorAll('a[href]');
+        for (const link of bioLinks) {
+            const text = (link.textContent || "").trim();
+            if (text.length > 0 && text.length < 200) {
+                bioText += " " + text.toLowerCase();
+            }
+        }
+
+        console.log(`[BOT] Profile bio text: ${bioText.length} chars`);
+        console.log(`[BOT] Bio preview: "${bioText.substring(0, 200)}"`);
+
+        return { success: true, bioText: bioText };
+    } catch (e) {
+        console.error("[BOT] scanProfile error:", e);
+        return { success: true, bioText: "" }; // Don't block messaging on scan errors
     }
-    return null;
 }
 
-// Types the message and triggers React/Lexical events
-async function typeMessage(element, text) {
-    if (!text || text.trim() === "") text = "Hey!";
-
-    element.focus();
-    await sleep(500);
-
-    let target = element.querySelector('p') || element;
-    target.focus();
-
-    document.execCommand('insertText', false, text);
-
-    target.dispatchEvent(new InputEvent('input', { bubbles: true, cancelable: true }));
-    element.dispatchEvent(new Event('change', { bubbles: true }));
-}
-
-async function sendMessage(username, messageData, restrictedLocsStr) {
-    console.log(`[BOT] === Starting DM flow for ${username} ===`);
+// ==========================================
+// ACTION 3: SEND MESSAGE on the /direct/ page
+// NO location scanning here — that's done separately on the profile page
+// ==========================================
+async function sendMessage(username, messageData) {
+    console.log(`[BOT] === SEND MESSAGE to ${username} ===`);
 
     await humanDelay(3, 5);
 
     // Dismiss "Not Now" popup
     try {
         const notNow = findByText('button', 'Not Now');
-        if (notNow) { notNow.click(); console.log("[BOT] Dismissed 'Not Now' popup."); }
+        if (notNow) { notNow.click(); console.log("[BOT] Dismissed 'Not Now'."); }
     } catch(e) {}
 
-    // Find pencil icon for New Message
-    console.log("[BOT] Looking for pencil icon...");
+    // Step 1: Click pencil icon
+    console.log("[BOT] Step 1: Looking for pencil icon...");
     const pencil = document.querySelector('svg[aria-label="New message"], svg[aria-label="New Message"]');
     if (!pencil) return { error: "Pencil icon not found." };
-
-    const pencilBtnDiv = pencil.closest('div[role="button"]');
-    if (pencilBtnDiv) pencilBtnDiv.click();
-    else if (pencil.parentNode) pencil.parentNode.click();
+    const pencilBtn = pencil.closest('div[role="button"]') || pencil.parentElement;
+    if (pencilBtn) pencilBtn.click();
     console.log("[BOT] Pencil clicked.");
-
     await humanDelay(2, 3);
 
-    // Search their exact username
-    console.log("[BOT] Looking for search input...");
+    // Step 2: Search username
+    console.log(`[BOT] Step 2: Searching for ${username}...`);
     const searchInput = document.querySelector('input[placeholder="Search..."], input[name="queryBox"]');
     if (!searchInput) return { error: "Search input not found." };
-
     searchInput.focus();
     document.execCommand('insertText', false, username);
-    console.log(`[BOT] Typed username: ${username}`);
-
     await humanDelay(3, 5);
 
-    // Find matching user in search results and click
-    console.log("[BOT] Looking for user in search results...");
+    // Step 3: Click on user in results
+    console.log("[BOT] Step 3: Clicking user in results...");
     const userResult = findByText('span', username);
-    if (!userResult) return { error: `User "${username}" not found in search results.` };
-
+    if (!userResult) return { error: `User "${username}" not found in search.` };
     userResult.click();
-    console.log("[BOT] Clicked on user result.");
     await humanDelay(1, 2);
 
-    // Initiate Chat
-    console.log("[BOT] Looking for Chat/Next button...");
+    // Step 4: Click Chat/Next button
+    console.log("[BOT] Step 4: Looking for Chat/Next button...");
     const chatBtn = findByText('div[role="button"]', 'Chat') || findByText('div[role="button"]', 'Next');
     if (chatBtn) {
         chatBtn.click();
-        console.log("[BOT] Chat/Next button clicked.");
+        console.log("[BOT] Chat/Next clicked.");
     } else {
-        console.log("[BOT] No Chat/Next button found — conversation may have opened directly.");
+        console.log("[BOT] No Chat/Next button — may have opened directly.");
     }
-
     await humanDelay(4, 6);
 
-    // === LOCATION SCANNER ===
-    console.log("[BOT] Scanning for restricted locations...");
-
-    const locs = (restrictedLocsStr || "").split(",").map(s => s.trim().toLowerCase()).filter(s => s);
-
-    if (locs.length > 0) {
-        let profileText = "";
-
-        // Find "View profile" link — the profile card is always near it
-        const viewProfileLink = findByText('a', 'View profile') || findByText('div[role="button"]', 'View profile');
-
-        if (viewProfileLink) {
-            let card = viewProfileLink;
-            for (let i = 0; i < 3; i++) {
-                if (card.parentElement) card = card.parentElement;
-            }
-            // Read textContent of small child elements only
-            const children = card.querySelectorAll(':scope > *');
-            for (const child of children) {
-                const text = (child.textContent || "").trim();
-                if (text.length > 0 && text.length < 500) {
-                    profileText += " " + text.toLowerCase();
-                }
-            }
-        }
-
-        console.log(`[BOT] Profile text scanned: ${profileText.length} chars`);
-
-        for (const loc of locs) {
-            if (profileText.includes(loc)) {
-                console.log(`[!] Skipped ${username}: Location match "${loc}"`);
-                return { skipped: true, reason: `Mentioned Location: ${loc}` };
-            }
-        }
-        console.log("[BOT] No restricted locations found. Proceeding.");
-    }
-
-    // === TYPE THE MESSAGE ===
-    console.log("[BOT] Looking for message textbox...");
+    // Step 5: Find textbox and type message
+    // NO LOCATION SCANNING HERE — it was already done on the profile page
+    console.log("[BOT] Step 5: Looking for textbox...");
     const textboxes = document.querySelectorAll('div[contenteditable="true"], textarea, div[role="textbox"]');
-    if (textboxes.length === 0) return { error: "Textbox not found on screen." };
+    if (textboxes.length === 0) return { error: "Textbox not found." };
 
     let textbox = null;
     for (const tb of textboxes) {
@@ -367,26 +311,33 @@ async function sendMessage(username, messageData, restrictedLocsStr) {
     if (!textbox) textbox = textboxes[textboxes.length - 1];
 
     console.log("[BOT] Typing message...");
-    await typeMessage(textbox, messageData);
+    textbox.focus();
+    await sleep(500);
+    let target = textbox.querySelector('p') || textbox;
+    target.focus();
+    const msg = (!messageData || messageData.trim() === "") ? "Hey!" : messageData;
+    document.execCommand('insertText', false, msg);
+    target.dispatchEvent(new InputEvent('input', { bubbles: true, cancelable: true }));
+    textbox.dispatchEvent(new Event('change', { bubbles: true }));
     await humanDelay(2, 3);
 
-    // === CLICK SEND ===
-    console.log("[BOT] Looking for Send button...");
+    // Step 6: Click Send
+    console.log("[BOT] Step 6: Clicking Send...");
     const sendBtn = findByText('div[role="button"]', 'Send');
-
     if (sendBtn) {
         sendBtn.click();
-        console.log(`[BOT] Send button clicked for ${username}!`);
+        console.log(`[BOT] SENT to ${username}!`);
     } else {
         textbox.dispatchEvent(new KeyboardEvent('keydown', { key: 'Enter', code: 'Enter', keyCode: 13, which: 13, bubbles: true }));
-        console.log(`[BOT] Enter key dispatched for ${username}!`);
+        console.log(`[BOT] Enter pressed for ${username}!`);
     }
 
-    console.log(`[BOT] === DM flow complete for ${username} ===`);
     return { success: true };
 }
 
-// Timeout wrapper
+// ==========================================
+// MESSAGE LISTENER with timeouts
+// ==========================================
 function withTimeout(asyncFn, timeoutMs, timeoutMsg) {
     return Promise.race([
         asyncFn(),
@@ -395,16 +346,25 @@ function withTimeout(asyncFn, timeoutMs, timeoutMsg) {
 }
 
 chrome.runtime.onMessage.addListener((request, sender, sendResponse) => {
+    console.log(`[BOT] Received action: ${request.action}`);
+
     if (request.action === "SCRAPE_VIEWERS") {
-        withTimeout(() => scrapeViewers(), 120000, "scrapeViewers timed out after 2 minutes")
+        withTimeout(() => scrapeViewers(), 120000, "scrapeViewers timed out")
             .then(sendResponse)
             .catch(err => sendResponse({ error: err.toString() }));
         return true;
     }
 
+    if (request.action === "SCAN_PROFILE") {
+        withTimeout(() => scanProfile(), 15000, "scanProfile timed out")
+            .then(sendResponse)
+            .catch(err => sendResponse({ success: true, bioText: "" }));
+        return true;
+    }
+
     if (request.action === "SEND_MESSAGE") {
         withTimeout(
-            () => sendMessage(request.username, request.messageTemplate, request.restrictedLocs),
+            () => sendMessage(request.username, request.messageTemplate),
             90000,
             `sendMessage timed out for ${request.username}`
         )
