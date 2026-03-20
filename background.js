@@ -1,5 +1,31 @@
 let isProcessing = false;
 
+// Send a message to a tab with a timeout — prevents the bot from hanging forever
+// if the content script doesn't respond (page loading, script crashed, etc.)
+function sendTabMessage(tabId, message, timeoutMs = 90000) {
+    return new Promise((resolve) => {
+        const timer = setTimeout(() => {
+            console.warn(`[BOT] Tab message timed out after ${timeoutMs/1000}s:`, message.action);
+            resolve({ error: `Tab message timed out (${message.action})` });
+        }, timeoutMs);
+
+        try {
+            chrome.tabs.sendMessage(tabId, message, (response) => {
+                clearTimeout(timer);
+                if (chrome.runtime.lastError) {
+                    console.warn("[BOT] Tab message error:", chrome.runtime.lastError.message);
+                    resolve({ error: chrome.runtime.lastError.message });
+                } else {
+                    resolve(response);
+                }
+            });
+        } catch (err) {
+            clearTimeout(timer);
+            resolve({ error: err.toString() });
+        }
+    });
+}
+
 chrome.runtime.onMessage.addListener((request, sender, sendResponse) => {
     if (request.action === "START_BOT") {
         if (!isProcessing) {
@@ -76,11 +102,9 @@ async function startScrapingCycle() {
         let batchTarget = Math.floor(Math.random() * ((config.maxBatch||30) - (config.minBatch||10) + 1)) + (config.minBatch||10);
         console.log(`[BOT] Target messages for this dynamic batch: ${batchTarget}`);
         
-        // Command content.js to scrape
+        // Command content.js to scrape (with 2-minute timeout)
         try {
-            const scrapeRes = await new Promise(resolve => {
-                chrome.tabs.sendMessage(tab.id, { action: "SCRAPE_VIEWERS" }, resolve);
-            });
+            const scrapeRes = await sendTabMessage(tab.id, { action: "SCRAPE_VIEWERS" }, 120000);
             
             if (!scrapeRes || !scrapeRes.success) {
                 console.error("[BOT] Scraping failed or no viewers found:", scrapeRes ? scrapeRes.error : "No response from tab.");
@@ -118,16 +142,14 @@ async function startScrapingCycle() {
                 
                 // Redirect to /direct/ first to ensure pencil icon is visible
                 await new Promise(r => chrome.tabs.update(tab.id, { url: "https://www.instagram.com/direct/" }, r));
-                await new Promise(r => setTimeout(r, 6000));
-                
-                const sendRes = await new Promise(resolve => {
-                    chrome.tabs.sendMessage(tab.id, {
-                        action: "SEND_MESSAGE",
-                        username: user,
-                        messageTemplate: activeMessage,
-                        restrictedLocs: config.restrictedLocs
-                    }, resolve);
-                });
+                await new Promise(r => setTimeout(r, 8000)); // 8s to let page + content script fully load
+
+                const sendRes = await sendTabMessage(tab.id, {
+                    action: "SEND_MESSAGE",
+                    username: user,
+                    messageTemplate: activeMessage,
+                    restrictedLocs: config.restrictedLocs
+                }, 90000); // 90 second timeout per person
                 
                 if (sendRes && sendRes.success) {
                     messaged_today.users.push(user);
