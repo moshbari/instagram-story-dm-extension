@@ -182,27 +182,59 @@ async function sendMessage(username, messageData, restrictedLocsStr) {
     
     await humanDelay(4, 6);
     
-    // Restricted Location Scanner — scan only the profile header area, NOT the full chat
-    console.log("[BOT] Scanning for restricted locations...");
+    // Restricted Location Scanner — ONLY scan tiny profile card elements, NEVER the full page
+    // Calling .innerText on large containers (div[role="main"], body) freezes the tab
+    // on long chat histories because the browser must serialize thousands of DOM nodes.
+    console.log("[BOT] Scanning profile card for restricted locations...");
 
-    // Look for the profile header area in the chat (contains name, username, bio snippet)
-    // This avoids scanning the entire chat history which can cause scroll/layout issues
-    const headerArea = document.querySelector('div[role="main"] header')
-        || document.querySelector('div[role="banner"]')
-        || null;
+    const locs = (restrictedLocsStr || "").split(",").map(s => s.trim().toLowerCase()).filter(s => s);
 
-    // Also grab the "View profile" button area which often contains location info
-    const profileSection = headerArea ? headerArea.parentElement : null;
-    const scanTarget = profileSection || document.querySelector('div[role="main"]') || document.body;
+    if (locs.length > 0) {
+        // Collect text ONLY from small, specific elements — never a large parent container
+        let profileTexts = [];
 
-    // Only scan a limited portion of text — the top profile area, not the full chat
-    const pageText = scanTarget.innerText.substring(0, 2000).toLowerCase();
-    const locs = restrictedLocsStr.split(",").map(s => s.trim().toLowerCase()).filter(s => s);
+        // 1. The profile card at the top of DM thread (name, bio snippet)
+        //    Look for the "View profile" link/button — the card is nearby
+        const viewProfileBtn = Array.from(document.querySelectorAll('a, div[role="button"], button'))
+            .find(el => el.innerText && el.innerText.trim().toLowerCase() === 'view profile');
 
-    for (const loc of locs) {
-        if (pageText.includes(loc)) {
-            console.log(`[!] Skipped: Contains ${loc}`);
-            return { skipped: true, reason: `Mentioned Location: ${loc}` };
+        if (viewProfileBtn) {
+            // The profile card is typically the parent or grandparent of "View profile"
+            const card = viewProfileBtn.parentElement?.parentElement;
+            if (card) {
+                // Only read direct child spans/divs text, not the whole subtree
+                const cardChildren = card.querySelectorAll(':scope > *, :scope > * > *');
+                for (const child of cardChildren) {
+                    if (child.children.length < 5 && child.innerText && child.innerText.length < 300) {
+                        profileTexts.push(child.innerText.toLowerCase());
+                    }
+                }
+            }
+        }
+
+        // 2. Also check the header area if it exists (small element)
+        const headerArea = document.querySelector('div[role="main"] header');
+        if (headerArea && headerArea.innerText && headerArea.innerText.length < 500) {
+            profileTexts.push(headerArea.innerText.toLowerCase());
+        }
+
+        // 3. Check any visible bio/subtitle spans near the top
+        const nameHeader = document.querySelector('div[role="main"] h2, div[role="main"] h1');
+        if (nameHeader) {
+            const nearby = nameHeader.parentElement;
+            if (nearby && nearby.innerText && nearby.innerText.length < 500) {
+                profileTexts.push(nearby.innerText.toLowerCase());
+            }
+        }
+
+        const combinedText = profileTexts.join(" ");
+        console.log(`[BOT] Profile card text length: ${combinedText.length} chars`);
+
+        for (const loc of locs) {
+            if (combinedText.includes(loc)) {
+                console.log(`[!] Skipped: Contains ${loc}`);
+                return { skipped: true, reason: `Mentioned Location: ${loc}` };
+            }
         }
     }
 
@@ -237,14 +269,30 @@ async function sendMessage(username, messageData, restrictedLocsStr) {
     return { success: true };
 }
 
+// Wraps any async function with a timeout so the extension never gets permanently stuck
+function withTimeout(asyncFn, timeoutMs, timeoutMsg) {
+    return Promise.race([
+        asyncFn(),
+        new Promise((_, reject) => setTimeout(() => reject(new Error(timeoutMsg)), timeoutMs))
+    ]);
+}
+
 chrome.runtime.onMessage.addListener((request, sender, sendResponse) => {
     if (request.action === "SCRAPE_VIEWERS") {
-        scrapeViewers().then(sendResponse);
+        withTimeout(() => scrapeViewers(), 120000, "scrapeViewers timed out after 2 minutes")
+            .then(sendResponse)
+            .catch(err => sendResponse({ error: err.toString() }));
         return true;
     }
-    
+
     if (request.action === "SEND_MESSAGE") {
-        sendMessage(request.username, request.messageTemplate, request.restrictedLocs).then(sendResponse);
+        withTimeout(
+            () => sendMessage(request.username, request.messageTemplate, request.restrictedLocs),
+            90000, // 90 second timeout per message
+            `sendMessage timed out for ${request.username}`
+        )
+            .then(sendResponse)
+            .catch(err => sendResponse({ error: err.toString() }));
         return true;
     }
 });
