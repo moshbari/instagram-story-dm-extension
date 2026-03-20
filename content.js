@@ -129,42 +129,84 @@ async function sendMessage(username, messageData, restrictedLocsStr) {
     
     await humanDelay(4, 6);
     
-    // Restricted Deep Scanner
+    // Restricted Deep Scanner — only scan the CHAT PANEL (right side), not the full page
     console.log("[BOT] Deep scanning for restricted locations via scrolling...");
+
+    // Find the main chat content area (right panel) to avoid scanning sidebar DM list
+    const chatPanel = document.querySelector('div[role="main"]') || document.querySelector('section main') || null;
+
     const scrollables = Array.from(document.querySelectorAll('div')).filter(el => {
         const overflow = window.getComputedStyle(el).overflowY;
         return overflow === 'auto' || overflow === 'scroll';
     });
-    // Trigger scroll jump twice 
+    // Trigger scroll jump twice
     scrollables.forEach(el => { el.scrollTop = 0; });
     await sleep(1500);
     scrollables.forEach(el => { el.scrollTop = 0; });
     await sleep(1000);
-    
-    const pageText = document.body.innerText.toLowerCase();
+
+    // Scan only the chat panel text if found, otherwise fall back to body
+    const scanTarget = chatPanel || document.body;
+    const pageText = scanTarget.innerText.toLowerCase();
     const locs = restrictedLocsStr.split(",").map(s => s.trim().toLowerCase()).filter(s => s);
-    
+
     for (const loc of locs) {
         if (pageText.includes(loc)) {
             console.log(`[!] Skipped: Contains ${loc}`);
             return { skipped: true, reason: `Mentioned Location: ${loc}` };
         }
     }
-    
+
     // Safety DOM Scanner: Prevent Double Messaging!
-    // This physically scans the chat UI for flex-end (right-aligned) blue bubbles that indicates you have already sent messages here before.
+    // Scans ONLY the chat message area for right-aligned (sent) message bubbles.
+    // Must exclude: profile info cards, Instagram labels, header text, and sidebar content.
     console.log("[BOT] Scanning native chat DOM for any previous sent messages...");
-    const texts = Array.from(document.querySelectorAll('div[dir="auto"]')).filter(el => el.innerText.trim().length > 0);
+
+    // Instagram sent messages have a specific structure: they appear inside the scrollable
+    // chat area as right-aligned bubbles with background color (typically blue/purple).
+    // The profile card at the top of new convos uses different structure.
+    const chatArea = chatPanel || document.body;
+    const texts = Array.from(chatArea.querySelectorAll('div[dir="auto"]')).filter(el => {
+        const text = el.innerText.trim();
+        if (text.length <= 2) return false;
+
+        // Exclude known non-message content: profile cards, labels, buttons
+        // Profile card texts include username, "Instagram", "Active X ago", names
+        const excludePatterns = [
+            /^[a-z0-9._]+$/i,               // Plain username
+            /instagram/i,                     // "Instagram" label
+            /^active/i,                       // "Active X ago"
+            /^message/i,                      // "Message..." placeholder
+            /^search/i,                       // Search placeholder
+            /^primary|^general|^requests/i,   // Tab labels
+            /^\d+ (followers?|following|posts)/i  // Profile stats
+        ];
+
+        for (const pattern of excludePatterns) {
+            if (pattern.test(text)) return false;
+        }
+
+        return true;
+    });
+
     let hasHistory = false;
     for (const msg of texts) {
         let parent = msg.parentElement;
         let depth = 0;
-        
+
         while (parent && depth < 6) {
             const style = window.getComputedStyle(parent);
-            if (style.justifyContent === 'flex-end' || style.alignSelf === 'flex-end' || style.alignItems === 'flex-end') {
-                if (msg.innerText.length > 2) { 
+
+            // Only flag as sent message if parent uses flex-end AND has a visible background
+            // (sent messages have colored bubble backgrounds, profile cards don't)
+            if (style.justifyContent === 'flex-end' || style.alignSelf === 'flex-end') {
+                // Check if this element or nearby child has a message bubble background
+                const bg = style.backgroundColor;
+                const hasBubbleBg = bg && bg !== 'rgba(0, 0, 0, 0)' && bg !== 'transparent' && bg !== 'rgb(255, 255, 255)';
+
+                if (hasBubbleBg) {
                     hasHistory = true;
+                    console.log(`[BOT] Found sent message bubble: "${msg.innerText.substring(0, 50)}..."`);
                     break;
                 }
             }
@@ -173,7 +215,7 @@ async function sendMessage(username, messageData, restrictedLocsStr) {
         }
         if (hasHistory) break;
     }
-    
+
     if (hasHistory) {
         console.log(`[!] Safely Skipped: We detected past chat history inside the DOM!`);
         return { skipped: true, reason: `Chat history already exists from previous days.` };
