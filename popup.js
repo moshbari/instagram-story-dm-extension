@@ -183,9 +183,11 @@ document.addEventListener('DOMContentLoaded', () => {
     }
 
     function tryParseDate(line, currentYear, monthNames, monthShort) {
-        // Remove trailing colon
-        if (!line.endsWith(':')) return null;
-        const dateStr = line.slice(0, -1).trim().toLowerCase();
+        // Remove trailing colon if present (colon is optional)
+        const dateStr = line.endsWith(':') ? line.slice(0, -1).trim().toLowerCase() : line.trim().toLowerCase();
+
+        // Skip lines that are too long to be a date header (avoids false matches in messages)
+        if (dateStr.length > 30) return null;
 
         // Pattern 1: "March 19" or "March 19, 2026"
         for (let i = 0; i < monthNames.length; i++) {
