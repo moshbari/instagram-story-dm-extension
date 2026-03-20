@@ -7,6 +7,27 @@ function humanDelay(minSec, maxSec) {
     return sleep(ms);
 }
 
+// SAFE text reader — uses .textContent (instant, no layout reflow) instead of .innerText
+// .innerText triggers synchronous layout computation which FREEZES the tab on large DOMs
+function safeText(el) {
+    if (!el) return "";
+    return (el.textContent || "").trim();
+}
+
+// Find a button/element by its text WITHOUT using .innerText on every element
+// Uses .textContent which is instant and non-blocking
+function findByText(selector, text, exact = true) {
+    const els = document.querySelectorAll(selector);
+    const lowerText = text.toLowerCase();
+    for (const el of els) {
+        const t = (el.textContent || "").trim().toLowerCase();
+        if (exact ? t === lowerText : t.includes(lowerText)) {
+            return el;
+        }
+    }
+    return null;
+}
+
 // Scrapes the story viewers
 async function scrapeViewers() {
     console.log("[BOT] Attempting to open active story...");
@@ -17,18 +38,16 @@ async function scrapeViewers() {
 
         await humanDelay(2, 4);
 
-        // Find "Seen by" OR "Viewers" (Instagram changed the text)
-        const seenBySpan = Array.from(document.querySelectorAll("span")).find(el =>
-            el.innerText && el.innerText.match(/Seen by|Viewers|viewers/i)
-        );
+        // Find "Seen by" OR "Viewers" using textContent (safe, no reflow)
+        const seenBySpan = findByText("span", "seen by", false) || findByText("span", "viewers", false);
         if (!seenBySpan) return { error: "'Seen by / Viewers' button not found." };
 
-        console.log("[BOT] Found viewer button text:", seenBySpan.innerText);
+        console.log("[BOT] Found viewer button text:", safeText(seenBySpan));
 
         // Click closest button
         const seenBtn = seenBySpan.closest('button') || seenBySpan.closest('div[role="button"]');
         if (seenBtn) seenBtn.click();
-        else seenBySpan.click(); // Fallback: click the span itself
+        else seenBySpan.click();
 
         await humanDelay(2, 3);
 
@@ -50,7 +69,7 @@ async function scrapeViewers() {
             const viewers = new Set();
 
             // Strategy 1: Links with href pointing to profiles
-            const links = Array.from(container.querySelectorAll("a"));
+            const links = container.querySelectorAll("a");
             for (const link of links) {
                 const href = link.getAttribute('href');
                 if (href && href.startsWith('/') && !href.includes('/p/') && !href.includes('/reel/')) {
@@ -61,13 +80,12 @@ async function scrapeViewers() {
                 }
             }
 
-            // Strategy 2: If no links found, look for username-style spans near avatar images
+            // Strategy 2: If no links found, look for profile pictures with alt text
             if (viewers.size === 0) {
                 const imgs = container.querySelectorAll('img[alt]');
                 for (const img of imgs) {
-                    const alt = img.getAttribute('alt');
-                    // Instagram profile pics have alt text like "username's profile picture"
-                    if (alt && alt.includes("profile picture")) {
+                    const alt = img.getAttribute('alt') || "";
+                    if (alt.includes("profile picture")) {
                         const un = alt.split("'")[0].trim();
                         if (un && un.length > 0 && !un.includes(' ')) {
                             viewers.add(un);
@@ -91,23 +109,20 @@ async function scrapeViewers() {
                 lastCount = currentCount;
                 attempts = 0;
 
-                // Scroll the last element into view within the dialog
                 const allItems = dialog.querySelectorAll("a, li, div[role='listitem']");
                 if (allItems.length > 0) {
                     allItems[allItems.length - 1].scrollIntoView({ behavior: 'smooth', block: 'end' });
                 } else {
-                    // Fallback: scroll the scrollable container
                     scrollable.scrollTop = scrollable.scrollHeight;
                 }
 
                 await sleep(1500);
             } else {
                 attempts++;
-                // Try scrolling even if count didn't change
                 scrollable.scrollTop = scrollable.scrollHeight;
                 await sleep(500);
             }
-            if (attempts > 5) break; // Reached bottom — gave a bit more patience
+            if (attempts > 5) break;
         }
 
         const finalViewers = collectUsernames(dialog);
@@ -120,152 +135,153 @@ async function scrapeViewers() {
     }
 }
 
-// Types the message instantly and triggers React/Lexical events
+// Types the message and triggers React/Lexical events
 async function typeMessage(element, text) {
-    if (!text || text.trim() === "") text = "Hey!"; // Fallback just in case
-    
+    if (!text || text.trim() === "") text = "Hey!";
+
     element.focus();
-    await sleep(500); // Wait for focus to settle
-    
-    // Deep focus into the precise paragraph Lexical uses if it's there
+    await sleep(500);
+
     let target = element.querySelector('p') || element;
     target.focus();
-    
-    // Paste the entire text at once. Native browser insertText correctly fires Lexical updates.
+
     document.execCommand('insertText', false, text);
-    
-    // Fire synthetic Input event to confidently enable the Send button
+
     target.dispatchEvent(new InputEvent('input', { bubbles: true, cancelable: true }));
     element.dispatchEvent(new Event('change', { bubbles: true }));
 }
 
 async function sendMessage(username, messageData, restrictedLocsStr) {
-    console.log(`[BOT] Interacting with DM for ${username}`);
-    
+    console.log(`[BOT] === Starting DM flow for ${username} ===`);
+
     await humanDelay(3, 5);
-    
-    // Dismiss "Not Now" popup for notifications, catching error safely
+
+    // Dismiss "Not Now" popup — using textContent (safe)
     try {
-        const notNow = Array.from(document.querySelectorAll('button')).find(b => b.innerText === 'Not Now');
-        if (notNow) notNow.click();
+        const notNow = findByText('button', 'Not Now');
+        if (notNow) { notNow.click(); console.log("[BOT] Dismissed 'Not Now' popup."); }
     } catch(e) {}
-    
+
     // Find pencil icon for New Message
+    console.log("[BOT] Looking for pencil icon...");
     const pencil = document.querySelector('svg[aria-label="New message"], svg[aria-label="New Message"]');
     if (!pencil) return { error: "Pencil icon not found." };
-    
+
     const pencilBtnDiv = pencil.closest('div[role="button"]');
     if (pencilBtnDiv) pencilBtnDiv.click();
     else if (pencil.parentNode) pencil.parentNode.click();
-    
+    console.log("[BOT] Pencil clicked.");
+
     await humanDelay(2, 3);
-    
+
     // Search their exact username
+    console.log("[BOT] Looking for search input...");
     const searchInput = document.querySelector('input[placeholder="Search..."], input[name="queryBox"]');
     if (!searchInput) return { error: "Search input not found." };
-    
+
     searchInput.focus();
     document.execCommand('insertText', false, username);
-    
+    console.log(`[BOT] Typed username: ${username}`);
+
     await humanDelay(3, 5);
-    
-    // Find matching user and click
-    const userResult = Array.from(document.querySelectorAll('span')).find(el => el.innerText === username);
-    if (!userResult) return { error: "User not found in search." };
-    
+
+    // Find matching user in search results and click — using textContent (safe)
+    console.log("[BOT] Looking for user in search results...");
+    const userResult = findByText('span', username);
+    if (!userResult) return { error: `User "${username}" not found in search results.` };
+
     userResult.click();
+    console.log("[BOT] Clicked on user result.");
     await humanDelay(1, 2);
-    
-    // Initiate Chat
-    const chatBtn = Array.from(document.querySelectorAll('div[role="button"]')).find(b => b.innerText === 'Chat');
-    if (chatBtn) chatBtn.click();
-    
+
+    // Initiate Chat — look for Chat or Next button using textContent (safe)
+    console.log("[BOT] Looking for Chat/Next button...");
+    const chatBtn = findByText('div[role="button"]', 'Chat') || findByText('div[role="button"]', 'Next');
+    if (chatBtn) {
+        chatBtn.click();
+        console.log("[BOT] Chat/Next button clicked.");
+    } else {
+        console.log("[BOT] No Chat/Next button found — conversation may have opened directly.");
+    }
+
     await humanDelay(4, 6);
-    
-    // Restricted Location Scanner — ONLY scan tiny profile card elements, NEVER the full page
-    // Calling .innerText on large containers (div[role="main"], body) freezes the tab
-    // on long chat histories because the browser must serialize thousands of DOM nodes.
-    console.log("[BOT] Scanning profile card for restricted locations...");
+
+    // === LOCATION SCANNER ===
+    // CRITICAL: We ONLY use .textContent (never .innerText) to avoid freezing the tab.
+    // We ONLY read small specific elements, never any container that might hold chat messages.
+    console.log("[BOT] Scanning for restricted locations...");
 
     const locs = (restrictedLocsStr || "").split(",").map(s => s.trim().toLowerCase()).filter(s => s);
 
     if (locs.length > 0) {
-        // Collect text ONLY from small, specific elements — never a large parent container
-        let profileTexts = [];
+        let profileText = "";
 
-        // 1. The profile card at the top of DM thread (name, bio snippet)
-        //    Look for the "View profile" link/button — the card is nearby
-        const viewProfileBtn = Array.from(document.querySelectorAll('a, div[role="button"], button'))
-            .find(el => el.innerText && el.innerText.trim().toLowerCase() === 'view profile');
+        // Strategy: Find the profile card at the top of DM thread.
+        // It typically contains the person's name/bio and a "View profile" link.
+        // We ONLY read the card's direct text — never traverse into the chat messages.
 
-        if (viewProfileBtn) {
-            // The profile card is typically the parent or grandparent of "View profile"
-            const card = viewProfileBtn.parentElement?.parentElement;
-            if (card) {
-                // Only read direct child spans/divs text, not the whole subtree
-                const cardChildren = card.querySelectorAll(':scope > *, :scope > * > *');
-                for (const child of cardChildren) {
-                    if (child.children.length < 5 && child.innerText && child.innerText.length < 300) {
-                        profileTexts.push(child.innerText.toLowerCase());
-                    }
+        // Find "View profile" link — the profile card is always near it
+        const viewProfileLink = findByText('a', 'View profile') || findByText('div[role="button"]', 'View profile');
+
+        if (viewProfileLink) {
+            // Walk up max 3 levels to find the card container, but cap text length
+            let card = viewProfileLink;
+            for (let i = 0; i < 3; i++) {
+                if (card.parentElement) card = card.parentElement;
+            }
+            // Read textContent of small child elements only (not the whole card subtree)
+            const children = card.querySelectorAll(':scope > *');
+            for (const child of children) {
+                const text = (child.textContent || "").trim();
+                // Only read small text blocks — anything over 500 chars is likely chat content
+                if (text.length > 0 && text.length < 500) {
+                    profileText += " " + text.toLowerCase();
                 }
             }
         }
 
-        // 2. Also check the header area if it exists (small element)
-        const headerArea = document.querySelector('div[role="main"] header');
-        if (headerArea && headerArea.innerText && headerArea.innerText.length < 500) {
-            profileTexts.push(headerArea.innerText.toLowerCase());
-        }
-
-        // 3. Check any visible bio/subtitle spans near the top
-        const nameHeader = document.querySelector('div[role="main"] h2, div[role="main"] h1');
-        if (nameHeader) {
-            const nearby = nameHeader.parentElement;
-            if (nearby && nearby.innerText && nearby.innerText.length < 500) {
-                profileTexts.push(nearby.innerText.toLowerCase());
-            }
-        }
-
-        const combinedText = profileTexts.join(" ");
-        console.log(`[BOT] Profile card text length: ${combinedText.length} chars`);
+        console.log(`[BOT] Profile text scanned: ${profileText.length} chars`);
 
         for (const loc of locs) {
-            if (combinedText.includes(loc)) {
-                console.log(`[!] Skipped: Contains ${loc}`);
+            if (profileText.includes(loc)) {
+                console.log(`[!] Skipped ${username}: Location match "${loc}"`);
                 return { skipped: true, reason: `Mentioned Location: ${loc}` };
             }
         }
+        console.log("[BOT] No restricted locations found. Proceeding.");
     }
 
-    // Note: No permanent chat history check — users can be messaged again on different days.
-    // Duplicate prevention is handled daily in background.js (messaged_today list resets each day).
-    
-    // Typing the actual DM
-    const textboxes = Array.from(document.querySelectorAll('div[contenteditable="true"], textarea, div[role="textbox"]'));
+    // === TYPE THE MESSAGE ===
+    console.log("[BOT] Looking for message textbox...");
+    const textboxes = document.querySelectorAll('div[contenteditable="true"], textarea, div[role="textbox"]');
     if (textboxes.length === 0) return { error: "Textbox not found on screen." };
-    
-    // Filter visible textboxes and pick the last one (DM input usually at bottom)
-    const visibleTextboxes = textboxes.filter(tb => tb.offsetParent !== null);
-    const textbox = visibleTextboxes[visibleTextboxes.length - 1] || textboxes[textboxes.length - 1];
-    
-    console.log(`[BOT] Typing message...`);
+
+    // Pick the visible textbox (DM input is usually the last visible one)
+    let textbox = null;
+    for (const tb of textboxes) {
+        if (tb.offsetParent !== null) textbox = tb;
+    }
+    if (!textbox) textbox = textboxes[textboxes.length - 1];
+
+    console.log("[BOT] Typing message...");
     await typeMessage(textbox, messageData);
     await humanDelay(2, 3);
-    
-    // Find the Send button - Instagram's text can sometimes be inside nested spans so exact match is safer
-    console.log("[BOT] Searching for Send button...");
-    const sendBtn = Array.from(document.querySelectorAll('div[role="button"]')).find(b => b.innerText && b.innerText.trim() === 'Send');
-    
+
+    // === CLICK SEND ===
+    // Find Send button using textContent (safe, no reflow)
+    console.log("[BOT] Looking for Send button...");
+    const sendBtn = findByText('div[role="button"]', 'Send');
+
     if (sendBtn) {
         sendBtn.click();
         console.log(`[BOT] Send button clicked for ${username}!`);
     } else {
-        // Fallback: simulate pressing Enter just in case the button didn't spawn natively
+        // Fallback: press Enter
         textbox.dispatchEvent(new KeyboardEvent('keydown', { key: 'Enter', code: 'Enter', keyCode: 13, which: 13, bubbles: true }));
         console.log(`[BOT] Enter key dispatched for ${username}!`);
     }
-    
+
+    console.log(`[BOT] === DM flow complete for ${username} ===`);
     return { success: true };
 }
 
@@ -288,7 +304,7 @@ chrome.runtime.onMessage.addListener((request, sender, sendResponse) => {
     if (request.action === "SEND_MESSAGE") {
         withTimeout(
             () => sendMessage(request.username, request.messageTemplate, request.restrictedLocs),
-            90000, // 90 second timeout per message
+            90000,
             `sendMessage timed out for ${request.username}`
         )
             .then(sendResponse)
